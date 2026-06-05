@@ -73,7 +73,7 @@ export default function Tokens() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="例如: Chrome 扩展"
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent-500/50"
+              className="w-full px-3 py-2 rounded-lg bg-surface-800 border border-surface-500 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-accent-500/70"
             />
           </div>
           <div>
@@ -81,7 +81,7 @@ export default function Tokens() {
             <select
               value={expiresIn}
               onChange={(e) => setExpiresIn(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-200 focus:outline-none focus:border-accent-500/50"
+              className="w-full px-3 py-2 rounded-lg bg-surface-800 border border-surface-500 text-sm text-gray-300 focus:outline-none focus:border-accent-500/70"
             >
               <option value="never">永不过期</option>
               <option value="7d">7 天</option>
@@ -99,7 +99,7 @@ export default function Tokens() {
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="text-xs px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 transition-colors"
+              className="text-xs px-4 py-2 rounded-lg bg-surface-700 hover:bg-surface-600 text-gray-300 transition-colors"
             >
               取消
             </button>

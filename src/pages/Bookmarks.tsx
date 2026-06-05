@@ -37,7 +37,7 @@ function Favicon({ url, className = 'w-5 h-5' }: { url: string; className?: stri
       src={src}
       alt=""
       className={`${className} rounded shrink-0`}
-      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+      onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
     />
   )
 }
@@ -79,29 +79,29 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel }: Bookmar
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-xs text-gray-500 mb-1 block">标题 *</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors" placeholder="书签标题" />
+        <label className="text-xs text-gray-400 mb-1 block">标题 *</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="书签标题" />
       </div>
       <div>
-        <label className="text-xs text-gray-500 mb-1 block">URL *</label>
-        <input value={url} onChange={(e) => setUrl(e.target.value)} className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors" placeholder="https://..." />
+        <label className="text-xs text-gray-400 mb-1 block">URL *</label>
+        <input value={url} onChange={(e) => setUrl(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="https://..." />
       </div>
       <div>
-        <label className="text-xs text-gray-500 mb-1 block">描述</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors resize-none h-20" placeholder="可选描述" />
+        <label className="text-xs text-gray-400 mb-1 block">描述</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors resize-none h-20" placeholder="可选描述" />
       </div>
       <div>
-        <label className="text-xs text-gray-500 mb-1 block">分类</label>
-        <select value={categoryId || ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors">
+        <label className="text-xs text-gray-400 mb-1 block">分类</label>
+        <select value={categoryId || ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
           <option value="">无分类</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
       <div>
-        <label className="text-xs text-gray-500 mb-1 block">标签</label>
+        <label className="text-xs text-gray-400 mb-1 block">标签</label>
         <div className="flex flex-wrap gap-1.5">
           {tags.map((t) => (
-            <button key={t.id} type="button" onClick={() => toggleTag(t.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${selectedTagIds.includes(t.id) ? 'bg-accent-500/20 text-accent-400 border border-accent-500/30' : 'bg-surface-700 text-gray-400 border border-white/5 hover:border-white/20'}`}>
+            <button key={t.id} type="button" onClick={() => toggleTag(t.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${selectedTagIds.includes(t.id) ? 'bg-accent-500/20 text-accent-400 border border-accent-500/30' : 'bg-surface-800 text-gray-400 border border-surface-500 hover:border-surface-400'}`}>
               {t.name}
             </button>
           ))}
@@ -243,7 +243,7 @@ export default function Bookmarks() {
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && doSearch()}
-              className="w-full bg-surface-700 border border-white/5 rounded-lg pl-9 pr-3 py-2.5 sm:py-2 text-sm outline-none focus:border-accent-500/50 transition-colors"
+              className="w-full bg-surface-800 border border-surface-500 rounded-lg pl-9 pr-3 py-2.5 sm:py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors"
               placeholder="搜索标题、URL、描述..."
             />
           </div>
@@ -251,7 +251,7 @@ export default function Bookmarks() {
             <select
               value={filterCategory ?? ''}
               onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : undefined)}
-              className="flex-1 sm:flex-none bg-surface-700 border border-white/5 rounded-lg px-3 py-2.5 sm:py-2 text-sm outline-none focus:border-accent-500/50 transition-colors min-w-0 sm:min-w-[120px]"
+              className="flex-1 sm:flex-none bg-surface-800 border border-surface-500 rounded-lg px-3 py-2.5 sm:py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors min-w-0 sm:min-w-[120px]"
             >
               <option value="">全部分类</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -259,7 +259,7 @@ export default function Bookmarks() {
             <select
               value={filterPinned === undefined ? '' : filterPinned ? 'true' : 'false'}
               onChange={(e) => setFilterPinned(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="flex-1 sm:flex-none bg-surface-700 border border-white/5 rounded-lg px-3 py-2.5 sm:py-2 text-sm outline-none focus:border-accent-500/50 transition-colors min-w-0 sm:min-w-[100px]"
+              className="flex-1 sm:flex-none bg-surface-800 border border-surface-500 rounded-lg px-3 py-2.5 sm:py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors min-w-0 sm:min-w-[100px]"
             >
               <option value="">全部状态</option>
               <option value="true">已置顶</option>

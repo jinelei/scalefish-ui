@@ -37,9 +37,9 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative w-full glass border border-white/10 shadow-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-none sm:rounded-xl sm:mx-4 sm:max-w-lg"
+            className="relative w-full glass border border-surface-500/50 shadow-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-none sm:rounded-xl sm:mx-4 sm:max-w-lg"
           >
-            <div className="sticky top-0 z-10 glass flex items-center justify-between px-5 py-4 border-b border-white/5">
+            <div className="sticky top-0 z-10 glass flex items-center justify-between px-5 py-4 border-b border-surface-500/30">
               <h2 className="font-semibold text-sm">{title}</h2>
               <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1">
                 <FiX size={20} />
