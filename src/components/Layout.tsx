@@ -1,0 +1,113 @@
+import { useState, useRef } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
+import { FiSun, FiMoon, FiMonitor, FiDownload, FiUpload, FiLogOut } from 'react-icons/fi'
+import { HiMenuAlt2 } from 'react-icons/hi'
+import Sidebar from './Sidebar'
+import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../contexts/AuthContext'
+import { exportBackup, importBackup } from '../utils/backup'
+
+const pageTitles: Record<string, [string, string]> = {
+  '/': ['Dashboard', '书签管理概览'],
+  '/bookmarks': ['书签', '书签管理'],
+  '/categories': ['分类', '树形结构管理'],
+  '/tags': ['标签', '标签管理'],
+}
+
+export default function Layout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const { theme, cycleTheme } = useTheme()
+  const { user, logout } = useAuth()
+  const location = useLocation()
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const [title, subtitle] = pageTitles[location.pathname] || ['', '']
+  const themeLabel = theme === 'light' ? '亮色' : theme === 'dark' ? '暗色' : '跟随系统'
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      importBackup(file)
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <div className="flex h-screen bg-surface-900 overflow-hidden">
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="glass border-b border-white/5 h-14 flex items-center px-4 gap-3 shrink-0">
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="text-gray-400 hover:text-white transition-colors p-1"
+          >
+            <HiMenuAlt2 size={22} />
+          </button>
+          <div className="flex items-baseline gap-2 min-w-0">
+            <span className="text-sm font-bold gradient-text truncate">{title}</span>
+            {subtitle && <span className="text-[11px] text-gray-500 truncate">{subtitle}</span>}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="hidden sm:inline-flex text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            title="导入"
+          >
+            <FiUpload size={15} />
+          </button>
+          <input ref={fileRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
+          <button
+            onClick={exportBackup}
+            className="hidden sm:inline-flex text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            title="导出"
+          >
+            <FiDownload size={15} />
+          </button>
+          <button
+            onClick={cycleTheme}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            title={themeLabel}
+          >
+            {theme === 'system' ? <FiMonitor size={14} /> : theme === 'light' ? <FiSun size={14} /> : <FiMoon size={14} />}
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-200 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            >
+              <span className="w-5 h-5 rounded-full bg-accent-600 flex items-center justify-center text-white text-[10px] font-medium">
+                {user?.username?.charAt(0).toUpperCase() || '?'}
+              </span>
+              <span className="hidden sm:inline">{user?.username}</span>
+            </button>
+            {userMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-20 w-40 glass rounded-lg py-1 shadow-xl border border-white/10">
+                  <div className="px-3 py-2 text-xs text-gray-400 border-b border-white/5">
+                    {user?.name || user?.username}
+                  </div>
+                  <button
+                    onClick={() => { setUserMenuOpen(false); logout() }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-400 hover:text-rose-400 hover:bg-white/5 transition-colors"
+                  >
+                    <FiLogOut size={13} />
+                    退出登录
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
+            <span className="inline-block w-2 h-2 rounded-full bg-neon-500 animate-pulse" />
+            scalefish API
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}
