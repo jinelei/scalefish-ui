@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Bookmarks from './pages/Bookmarks'
 import Categories from './pages/Categories'
 import Tags from './pages/Tags'
+import Tokens from './pages/Tokens'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -25,6 +26,7 @@ function AppRoutes() {
         <Route path="/bookmarks" element={<Bookmarks />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/tags" element={<Tags />} />
+        <Route path="/tokens" element={<Tokens />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

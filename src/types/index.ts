@@ -105,3 +105,18 @@ export interface UserInfo {
   name: string | null;
   email: string | null;
 }
+
+export interface CreateApiTokenRequest {
+  name: string;
+  expiresIn?: string;
+}
+
+export interface ApiTokenResponse {
+  id: number;
+  name: string;
+  token?: string;
+  tokenPrefix: string;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+}

@@ -12,6 +12,7 @@ const pageTitles: Record<string, [string, string]> = {
   '/bookmarks': ['书签', '书签管理'],
   '/categories': ['分类', '树形结构管理'],
   '/tags': ['标签', '标签管理'],
+  '/tokens': ['Token', 'API Token 管理'],
 }
 
 export default function Layout() {
