@@ -186,7 +186,7 @@ export default function Dashboard() {
                       src={b.faviconUrl || `https://www.google.com/s2/favicons?domain=${new URL(b.url).hostname}&sz=32`}
                       alt=""
                       className="w-8 h-8 rounded-lg shrink-0 mt-0.5"
-                      onError={(e) => { (e.target as HTMLImageElement).src = ''; (e.target as HTMLImageElement).style.display = 'none' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function Dashboard() {
                     src={b.faviconUrl || `https://www.google.com/s2/favicons?domain=${new URL(b.url).hostname}&sz=32`}
                     alt=""
                     className="w-5 h-5 rounded shrink-0 mt-0.5"
-                    onError={(e) => { (e.target as HTMLImageElement).src = ''; (e.target as HTMLImageElement).style.display = 'none' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm truncate group-hover:text-accent-400 transition-colors">{b.title}</div>
