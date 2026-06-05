@@ -1,5 +1,5 @@
 import client from './client'
-import type { AuthResponse, LoginRequest, UserInfo, GenericResult } from '../types'
+import type { AuthResponse, LoginRequest, UserInfo, RegistrationStatus, GenericResult } from '../types'
 
 export async function login(req: LoginRequest): Promise<GenericResult<AuthResponse>> {
   const res = await client.post('/auth/login', req)
@@ -22,5 +22,10 @@ export async function logout(): Promise<void> {
 
 export async function getMe(): Promise<GenericResult<UserInfo>> {
   const res = await client.get('/auth/me')
+  return res.data
+}
+
+export async function getRegistrationStatus(): Promise<GenericResult<RegistrationStatus>> {
+  const res = await client.get('/auth/registration-status')
   return res.data
 }

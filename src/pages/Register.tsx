@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { register as registerApi } from '../api/auth'
+import { register as registerApi, getRegistrationStatus } from '../api/auth'
 
 export default function Register() {
   const { user } = useAuth()
@@ -12,8 +12,29 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [allowRegister, setAllowRegister] = useState(true)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    getRegistrationStatus()
+      .then(res => setAllowRegister(res.data.allowRegistration))
+      .catch(() => setAllowRegister(false))
+      .finally(() => setChecking(false))
+  }, [])
 
   if (user) return <Navigate to="/" replace />
+
+  if (!checking && !allowRegister) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-900 px-4">
+        <div className="w-full max-w-sm glass rounded-xl p-6 sm:p-8 space-y-6 text-center">
+          <h1 className="text-xl font-bold">注册已关闭</h1>
+          <p className="text-sm text-gray-500">管理员已关闭注册，请联系管理员开通</p>
+          <Link to="/login" className="inline-block text-sm text-accent-400 hover:text-accent-300">返回登录</Link>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +50,10 @@ export default function Register() {
       window.location.href = '/'
     } catch (err) {
       setError(err instanceof Error ? err.message : '注册失败')
+      // If backend rejects because registration is disabled, update state
+      if (err instanceof Error && err.message.includes('关闭注册')) {
+        setAllowRegister(false)
+      }
     } finally {
       setSubmitting(false)
     }

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getRegistrationStatus } from '../api/auth'
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -8,6 +9,15 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [allowRegister, setAllowRegister] = useState(true)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    getRegistrationStatus()
+      .then(res => setAllowRegister(res.data.allowRegistration))
+      .catch(() => setAllowRegister(false))
+      .finally(() => setChecking(false))
+  }, [])
 
   if (user) return <Navigate to="/" replace />
 
@@ -63,10 +73,12 @@ export default function Login() {
             {submitting ? '登录中...' : '登录'}
           </button>
         </form>
-        <p className="text-xs text-center text-gray-500">
-          没有账号？
-          <Link to="/register" className="text-accent-400 hover:text-accent-300 ml-1">注册</Link>
-        </p>
+        {!checking && allowRegister && (
+          <p className="text-xs text-center text-gray-500">
+            没有账号？
+            <Link to="/register" className="text-accent-400 hover:text-accent-300 ml-1">注册</Link>
+          </p>
+        )}
       </div>
     </div>
   )

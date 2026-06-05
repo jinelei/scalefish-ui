@@ -95,6 +95,10 @@ export interface AuthResponse {
   user: UserInfo;
 }
 
+export interface RegistrationStatus {
+  allowRegistration: boolean;
+}
+
 export interface UserInfo {
   id: number;
   username: string;
