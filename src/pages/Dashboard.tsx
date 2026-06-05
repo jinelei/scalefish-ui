@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiX } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiX, FiGrid, FiList, FiPaperclip } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import { searchBookmarks } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats } from '../api/categories'
@@ -36,6 +36,9 @@ export default function Dashboard() {
   const [catStats, setCatStats] = useState<Map<number, number>>(new Map())
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
+  })
 
   const fetchData = useCallback((catIds: number[], tagIds: number[]) => {
     setLoading(true)
@@ -61,6 +64,10 @@ export default function Dashboard() {
       setCatStats(new Map(cs.data.map(cs2 => [cs2.id, cs2.count])))
     }).finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('dashboardBookmarkView', viewMode)
+  }, [viewMode])
 
   useEffect(() => {
     fetchData([], [])
@@ -116,25 +123,91 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
         <motion.div variants={item} className="min-w-0 glass rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-300 mb-4">
-            {hasFilter ? '筛选结果' : '最新书签'}
-          </h2>
-          {loading ? (
-            <div className="space-y-2">
-              {[1,2,3,4,5,6].map(i => (
-                <div key={i} className="flex items-center gap-3 px-3 py-2 animate-pulse">
-                  <div className="w-5 h-5 rounded bg-white/10" />
-                  <div className="flex-1 space-y-1">
-                    <div className="h-4 w-48 rounded bg-white/10" />
-                    <div className="h-3 w-64 rounded bg-white/5" />
-                  </div>
-                </div>
-              ))}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-300">
+              {hasFilter ? '筛选结果' : '最新书签'}
+            </h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                title="图块视图"
+              >
+                <FiGrid size={14} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                title="列表视图"
+              >
+                <FiList size={14} />
+              </button>
             </div>
+          </div>
+          {loading ? (
+            viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="glass rounded-xl p-4 h-24 animate-pulse">
+                    <div className="bg-white/10 h-4 w-3/4 rounded mb-3" />
+                    <div className="bg-white/10 h-3 w-1/2 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[1,2,3,4,5,6].map(i => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2 animate-pulse">
+                    <div className="w-5 h-5 rounded bg-white/10" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-4 w-48 rounded bg-white/10" />
+                      <div className="h-3 w-64 rounded bg-white/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : recent.length === 0 ? (
             <p className="text-sm text-gray-500 py-8 text-center">暂无书签</p>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {recent.map((b) => (
+                <a
+                  key={b.id}
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass rounded-xl p-4 glass-hover transition-all group block"
+                >
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={b.faviconUrl || `https://www.google.com/s2/favicons?domain=${new URL(b.url).hostname}&sz=32`}
+                      alt=""
+                      className="w-8 h-8 rounded-lg shrink-0 mt-0.5"
+                      onError={(e) => { (e.target as HTMLImageElement).src = ''; (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold truncate group-hover:text-accent-400 transition-colors">{b.title}</span>
+                        {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{b.url}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {b.category && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium">{b.category.name}</span>
+                        )}
+                        {b.tags.slice(0, 2).map(t => (
+                          <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-accent-500/10 text-accent-400">{t.name}</span>
+                        ))}
+                        {b.tags.length > 2 && <span className="text-[10px] text-gray-500">+{b.tags.length - 2}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
           ) : (
             <div className="space-y-2">
               {recent.map((b) => (
@@ -201,7 +274,7 @@ export default function Dashboard() {
                     <button
                       key={`cat-${c.id}`}
                       onClick={() => toggleCategory(c.id)}
-                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors max-w-full sm:max-w-[240px] ${
+                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors max-w-full sm:max-w-[320px] ${
                         active
                           ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                           : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'

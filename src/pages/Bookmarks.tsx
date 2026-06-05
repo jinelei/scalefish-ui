@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import {
   FiSearch, FiPlus, FiExternalLink, FiChevronLeft, FiChevronRight,
   FiTrash2, FiEdit2, FiMousePointer, FiX, FiBookmark, FiPaperclip,
+  FiGrid, FiList,
 } from 'react-icons/fi'
 import { searchBookmarks, createBookmark, updateBookmark, deleteBookmark, togglePin, recordClick } from '../api/bookmarks'
 import { getCategoryTree } from '../api/categories'
@@ -128,6 +129,9 @@ export default function Bookmarks() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [filterCategory, setFilterCategory] = useState<number | undefined>()
   const [filterPinned, setFilterPinned] = useState<boolean | undefined>()
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('bookmarkView') as 'grid' | 'list') || 'grid'
+  })
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<BookmarkResponse | undefined>()
 
@@ -150,6 +154,10 @@ export default function Bookmarks() {
     setCategories(cRes.data)
     setTags(tRes.data)
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('bookmarkView', viewMode)
+  }, [viewMode])
 
   useEffect(() => {
     fetch()
@@ -271,15 +279,46 @@ export default function Bookmarks() {
         </div>
       </div>
 
+      <div className="flex items-center justify-end gap-1">
+        <button
+          onClick={() => setViewMode('grid')}
+          className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+          title="图块视图"
+        >
+          <FiGrid size={16} />
+        </button>
+        <button
+          onClick={() => setViewMode('list')}
+          className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+          title="列表视图"
+        >
+          <FiList size={16} />
+        </button>
+      </div>
+
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glass rounded-xl p-4 h-28 animate-pulse">
-              <div className="bg-surface-600 h-4 w-3/4 rounded mb-3" />
-              <div className="bg-surface-600 h-3 w-1/2 rounded" />
-            </div>
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="glass rounded-xl p-4 h-28 animate-pulse">
+                <div className="bg-surface-600 h-4 w-3/4 rounded mb-3" />
+                <div className="bg-surface-600 h-3 w-1/2 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="glass rounded-xl px-4 py-3 h-14 animate-pulse flex items-center gap-3">
+                <div className="w-5 h-5 rounded bg-surface-600 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="bg-surface-600 h-3 w-1/2 rounded" />
+                  <div className="bg-surface-600 h-2 w-1/4 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : bookmarks.length === 0 ? (
         <div className="text-center py-16 text-gray-500">
           <FiBookmark size={40} className="mx-auto mb-3 opacity-30" />
@@ -287,6 +326,7 @@ export default function Bookmarks() {
         </div>
       ) : (
         <>
+        {viewMode === 'grid' ? (
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <motion.div
               variants={itemAnim}
@@ -348,20 +388,82 @@ export default function Bookmarks() {
               </motion.div>
             ))}
           </motion.div>
+        ) : (
+          <motion.div variants={container} initial="hidden" animate="show" className="space-y-2">
+            <motion.div
+              variants={itemAnim}
+              onClick={openCreate}
+              className="glass rounded-xl px-4 py-3 border-2 border-dashed border-white/10 hover:border-accent-500/40 flex items-center justify-center cursor-pointer transition-colors group"
+            >
+              <div className="flex items-center gap-2 text-gray-500 group-hover:text-accent-400 transition-colors">
+                <FiPlus size={18} />
+                <span className="text-sm font-medium">新建书签</span>
+              </div>
+            </motion.div>
+            {bookmarks.map((b) => (
+              <motion.div
+                key={b.id}
+                variants={itemAnim}
+                className="glass rounded-xl px-4 py-3 flex items-center gap-3 group"
+              >
+                <Favicon url={b.url} className="w-5 h-5 rounded shrink-0" />
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
+                    <a
+                      href={b.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => handleClick(b.id)}
+                      className="text-sm font-medium truncate hover:text-accent-400 transition-colors"
+                    >
+                      {b.title}
+                    </a>
+                    <span className="text-xs text-gray-500 truncate hidden lg:inline flex-shrink min-w-0 max-w-[240px]">{b.url}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {b.category && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium hidden sm:inline">{b.category.name}</span>
+                    )}
+                    {b.tags.slice(0, 2).map((t) => (
+                      <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-accent-500/10 text-accent-400 hidden sm:inline">{t.name}</span>
+                    ))}
+                    {b.tags.length > 2 && <span className="text-[10px] text-gray-500 hidden sm:inline">+{b.tags.length - 2}</span>}
+                    <span className="flex items-center gap-1 text-xs text-gray-500 ml-1"><FiMousePointer size={11} /> {b.clickCount}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => handleClick(b.id)} className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors opacity-0 group-hover:opacity-100" title="打开">
+                    <FiExternalLink size={14} />
+                  </a>
+                  <button onClick={() => handlePin(b.id)} className={`p-1.5 rounded hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100 ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`} title={b.pinned ? '取消置顶' : '置顶'}>
+                    <FiPaperclip size={14} />
+                  </button>
+                  <button onClick={() => openEdit(b)} className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors opacity-0 group-hover:opacity-100" title="编辑">
+                    <FiEdit2 size={14} />
+                  </button>
+                  <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100" title="删除">
+                    <FiTrash2 size={14} />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <button disabled={currentPage === 0} onClick={() => goPage(currentPage - 1)} className="p-2 rounded-lg bg-surface-700 hover:bg-surface-600 disabled:opacity-30 transition-colors">
-                <FiChevronLeft size={16} />
-              </button>
-              <span className="text-sm text-gray-400 px-3">
-                {currentPage + 1} / {totalPages}
-              </span>
-              <button disabled={currentPage >= totalPages - 1} onClick={() => goPage(currentPage + 1)} className="p-2 rounded-lg bg-surface-700 hover:bg-surface-600 disabled:opacity-30 transition-colors">
-                <FiChevronRight size={16} />
-              </button>
-            </div>
-          )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <button disabled={currentPage === 0} onClick={() => goPage(currentPage - 1)} className="p-2 rounded-lg bg-surface-700 hover:bg-surface-600 disabled:opacity-30 transition-colors">
+              <FiChevronLeft size={16} />
+            </button>
+            <span className="text-sm text-gray-400 px-3">
+              {currentPage + 1} / {totalPages}
+            </span>
+            <button disabled={currentPage >= totalPages - 1} onClick={() => goPage(currentPage + 1)} className="p-2 rounded-lg bg-surface-700 hover:bg-surface-600 disabled:opacity-30 transition-colors">
+              <FiChevronRight size={16} />
+            </button>
+          </div>
+        )}
         </>
       )}
 
