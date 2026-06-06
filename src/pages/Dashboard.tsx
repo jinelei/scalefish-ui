@@ -124,7 +124,7 @@ export default function Dashboard() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item} className="relative">
-        <div className="relative max-w-lg mx-auto w-full">
+        <div className="relative w-full">
           <FiSearch size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={keyword}
