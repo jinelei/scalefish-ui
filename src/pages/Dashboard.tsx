@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiX, FiGrid, FiList, FiPaperclip } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiGrid, FiList, FiPaperclip } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import { searchBookmarks, recordClick } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats } from '../api/categories'
@@ -36,16 +36,18 @@ export default function Dashboard() {
   const [catStats, setCatStats] = useState<Map<number, number>>(new Map())
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [keyword, setKeyword] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
   })
 
-  const fetchData = useCallback((catIds: number[], tagIds: number[]) => {
+  const fetchData = useCallback((catIds: number[], tagIds: number[], kw: string = '') => {
     setLoading(true)
-    const hasFilter = catIds.length > 0 || tagIds.length > 0
+    const hasFilter = catIds.length > 0 || tagIds.length > 0 || kw.length > 0
     const bmParams: Record<string, unknown> = { page: 0, size: hasFilter ? 100 : 6 }
     if (catIds.length > 0) bmParams.categoryIds = catIds
     if (tagIds.length > 0) bmParams.tagIds = tagIds
+    if (kw.length > 0) bmParams.keyword = kw
     const statsParams: Record<string, unknown> = {}
     if (catIds.length > 0) statsParams.categoryIds = catIds
     if (tagIds.length > 0) statsParams.tagIds = tagIds
@@ -78,7 +80,7 @@ export default function Dashboard() {
   const toggleCategory = (id: number) => {
     setSelectedCategoryIds(prev => {
       const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
-      fetchData(next, selectedTagIds)
+      fetchData(next, selectedTagIds, keyword)
       return next
     })
   }
@@ -86,7 +88,7 @@ export default function Dashboard() {
   const toggleTag = (id: number) => {
     setSelectedTagIds(prev => {
       const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
-      fetchData(selectedCategoryIds, next)
+      fetchData(selectedCategoryIds, next, keyword)
       return next
     })
   }
@@ -125,11 +127,31 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
         <motion.div variants={item} className="min-w-0 glass rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-300">
-              {hasFilter ? '筛选结果' : '最新书签'}
-            </h2>
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between mb-4 gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-gray-300 shrink-0">
+                {keyword || hasFilter ? '筛选结果' : '最新书签'}
+              </h2>
+              <div className="relative flex-1 max-w-xs min-w-0">
+                <FiSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') fetchData(selectedCategoryIds, selectedTagIds, keyword) }}
+                  className="w-full bg-surface-800 border border-surface-500 rounded-lg pl-8 pr-8 py-1.5 text-xs text-gray-300 outline-none focus:border-accent-500/70 transition-colors"
+                  placeholder="搜索标题、URL..."
+                />
+                {keyword && (
+                  <button
+                    onClick={() => { setKeyword(''); fetchData(selectedCategoryIds, selectedTagIds, '') }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <FiX size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
@@ -262,7 +284,7 @@ export default function Dashboard() {
               {selectedCategoryIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-purple-400 ml-1">({selectedCategoryIds.length})</span>
-                  <button onClick={() => { setSelectedCategoryIds([]); fetchData([], selectedTagIds) }} className="text-xs text-purple-400/70 hover:text-purple-300 ml-2 transition-colors">清除</button>
+                  <button onClick={() => { setSelectedCategoryIds([]); fetchData([], selectedTagIds, keyword) }} className="text-xs text-purple-400/70 hover:text-purple-300 ml-2 transition-colors">清除</button>
                 </>
               )}
             </div>
@@ -299,7 +321,7 @@ export default function Dashboard() {
               {selectedTagIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-neon-400 ml-1">({selectedTagIds.length})</span>
-                  <button onClick={() => { setSelectedTagIds([]); fetchData(selectedCategoryIds, []) }} className="text-xs text-neon-400/70 hover:text-neon-300 ml-2 transition-colors">清除</button>
+                  <button onClick={() => { setSelectedTagIds([]); fetchData(selectedCategoryIds, [], keyword) }} className="text-xs text-neon-400/70 hover:text-neon-300 ml-2 transition-colors">清除</button>
                 </>
               )}
             </div>
