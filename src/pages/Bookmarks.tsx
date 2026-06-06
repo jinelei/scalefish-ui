@@ -210,8 +210,12 @@ export default function Bookmarks() {
   }
 
   const handleClick = async (id: number) => {
-    await recordClick(id)
-    setBookmarks((prev) => prev.map((b) => b.id === id ? { ...b, clickCount: b.clickCount + 1 } : b))
+    try {
+      const res = await recordClick(id)
+      setBookmarks((prev) => prev.map((b) => b.id === id ? { ...b, clickCount: res.data.clickCount } : b))
+    } catch {
+      // silently ignore — the DB still records the click
+    }
   }
 
   const openEdit = (b: BookmarkResponse) => {
@@ -348,7 +352,9 @@ export default function Bookmarks() {
                   <Favicon url={b.url} className="w-8 h-8 rounded-lg mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold truncate">{b.title}</h3>
+                      <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => handleClick(b.id)} className="text-sm font-semibold truncate hover:text-accent-400 transition-colors">
+                        {b.title}
+                      </a>
                       {b.pinned && <FiPaperclip size={12} className="text-rose-400 shrink-0" />}
                     </div>
                     <p className="text-xs text-gray-500 truncate mt-0.5">{b.url}</p>
