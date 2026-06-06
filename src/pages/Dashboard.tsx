@@ -123,24 +123,6 @@ export default function Dashboard() {
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        {cards.map(({ label, value, icon: Icon, color }) => (
-          <motion.div
-            key={label}
-            variants={item}
-            className="glass rounded-xl p-4 flex items-center gap-4 hover:border-white/10 transition-colors"
-          >
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center shadow-lg shrink-0`}>
-              <Icon size={18} className="text-white" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{loading ? '...' : value}</div>
-              <div className="text-xs text-gray-500">{label}</div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
       <motion.div variants={item} className="relative">
         <div className="relative max-w-lg mx-auto w-full">
           <FiSearch size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -299,6 +281,23 @@ export default function Dashboard() {
         </motion.div>
 
         <div className="space-y-4">
+          <motion.div variants={item} className="grid grid-cols-2 gap-2">
+            {cards.map(({ label, value, icon: Icon, color }) => (
+              <div
+                key={label}
+                className={`glass rounded-xl p-3 flex items-center gap-3 ${loading ? 'opacity-60' : ''} transition-opacity`}
+              >
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center shadow-lg shrink-0`}>
+                  <Icon size={14} className="text-white" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-lg font-bold leading-tight">{loading ? '...' : value}</div>
+                  <div className="text-[10px] text-gray-500 leading-tight truncate">{label}</div>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
           <motion.div variants={item} className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-1.5">
               <FiFolder size={14} className="text-purple-400" />
