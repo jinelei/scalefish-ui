@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiX, FiGrid, FiList, FiPaperclip } from 'react-icons/fi'
 import { motion } from 'framer-motion'
-import { searchBookmarks } from '../api/bookmarks'
+import { searchBookmarks, recordClick } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats } from '../api/categories'
 import { getAllTags, getTagStats } from '../api/tags'
 import type { BookmarkResponse, CategoryResponse, TagResponse, TagStatsResponse } from '../types'
@@ -179,6 +179,7 @@ export default function Dashboard() {
                   href={b.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => recordClick(b.id)}
                   className="glass rounded-xl p-4 glass-hover transition-all group block"
                 >
                   <div className="flex items-start gap-3">
@@ -216,6 +217,7 @@ export default function Dashboard() {
                   href={b.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => recordClick(b.id)}
                   className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors group min-w-0"
                 >
                   <img
