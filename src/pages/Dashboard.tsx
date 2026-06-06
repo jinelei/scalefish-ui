@@ -153,13 +153,13 @@ export default function Dashboard() {
                 fetchData(selectedCategoryIds, selectedTagIds, keyword)
               }
             }}
-            className="w-full bg-surface-800/60 backdrop-blur-sm rounded-xl pl-11 pr-10 py-3 text-sm text-gray-100 placeholder-gray-500 outline-none transition-all"
+            className="w-full bg-surface-800/60 backdrop-blur-sm rounded-xl pl-11 pr-10 py-3 text-sm text-gray-300 placeholder-gray-500 outline-none transition-all"
             placeholder="搜索书签标题、URL..."
           />
           {keyword && (
             <button
               onClick={() => { setKeyword(''); fetchData(selectedCategoryIds, selectedTagIds, '') }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors p-0.5 rounded hover:bg-white/5"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors p-0.5 rounded hover:bg-white/5"
             >
               <FiX size={16} />
             </button>
