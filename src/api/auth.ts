@@ -29,3 +29,13 @@ export async function getRegistrationStatus(): Promise<GenericResult<Registratio
   const res = await client.get('/auth/registration-status')
   return res.data
 }
+
+export async function changePassword(oldPassword: string, newPassword: string): Promise<GenericResult<void>> {
+  const res = await client.post('/auth/change-password', { oldPassword, newPassword })
+  return res.data
+}
+
+export async function updateProfile(data: { name?: string; email?: string }): Promise<GenericResult<UserInfo>> {
+  const res = await client.post('/auth/update-profile', data)
+  return res.data
+}

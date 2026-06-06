@@ -37,15 +37,16 @@ export default function Dashboard() {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   const [keyword, setKeyword] = useState('')
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
   })
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string) => {
+  const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string, pg: number) => {
     setLoading(true)
-    const hasFilter = catIds.length > 0 || tagIds.length > 0 || kw.length > 0
-    const bmParams: Record<string, unknown> = { page: 0, size: hasFilter ? 100 : 6 }
+    const bmParams: Record<string, unknown> = { page: pg, size: 10 }
     if (catIds.length > 0) bmParams.categoryIds = catIds
     if (tagIds.length > 0) bmParams.tagIds = tagIds
     if (kw.length > 0) bmParams.keyword = kw
@@ -61,6 +62,7 @@ export default function Dashboard() {
     ]).then(([b, c, t, s, cs]) => {
       setStats({ bookmarks: b.data.totalElements, categories: c.data.length, tags: t.data.length })
       setRecent(b.data.content)
+      setTotalPages(b.data.totalPages)
       setCategories(c.data)
       setAllTags(t.data)
       setTagStats(s.data)
@@ -76,10 +78,12 @@ export default function Dashboard() {
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
     if (keyword) {
       debounceTimer.current = setTimeout(() => {
-        doFetch(selectedCategoryIds, selectedTagIds, keyword)
+        setPage(0)
+        doFetch(selectedCategoryIds, selectedTagIds, keyword, 0)
       }, 1000)
     } else {
-      doFetch(selectedCategoryIds, selectedTagIds, keyword)
+      setPage(0)
+      doFetch(selectedCategoryIds, selectedTagIds, keyword, 0)
     }
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current) }
   }, [selectedCategoryIds, selectedTagIds, keyword]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -100,7 +104,7 @@ export default function Dashboard() {
 
   const handlePin = async (id: number) => {
     await togglePin(id)
-    doFetch(selectedCategoryIds, selectedTagIds, keyword)
+    doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
   }
 
   const hasFilter = selectedCategoryIds.length > 0 || selectedTagIds.length > 0
@@ -126,7 +130,8 @@ export default function Dashboard() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 if (debounceTimer.current) clearTimeout(debounceTimer.current)
-                doFetch(selectedCategoryIds, selectedTagIds, keyword)
+                setPage(0)
+                doFetch(selectedCategoryIds, selectedTagIds, keyword, 0)
               }
             }}
             className="w-full bg-surface-800/60 backdrop-blur-sm rounded-xl pl-11 pr-10 py-3 text-sm text-gray-300 placeholder-gray-500 outline-none transition-all"
@@ -284,6 +289,27 @@ export default function Dashboard() {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-white/5">
+              <button
+                disabled={page === 0}
+                onClick={() => { const p = page - 1; setPage(p); doFetch(selectedCategoryIds, selectedTagIds, keyword, p) }}
+                className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                上一页
+              </button>
+              <span className="text-xs text-gray-500">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages - 1}
+                onClick={() => { const p = page + 1; setPage(p); doFetch(selectedCategoryIds, selectedTagIds, keyword, p) }}
+                className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                下一页
+              </button>
             </div>
           )}
         </motion.div>

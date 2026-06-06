@@ -9,6 +9,7 @@ import Categories from './pages/Categories'
 import Tags from './pages/Tags'
 import Tokens from './pages/Tokens'
 import ChromeExt from './pages/ChromeExt'
+import Settings from './pages/Settings'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route path="/categories" element={<Categories />} />
         <Route path="/tags" element={<Tags />} />
         <Route path="/tokens" element={<Tokens />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/chrome-ext" element={<ChromeExt />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
