@@ -100,10 +100,6 @@ export default function Layout() {
               </>
             )}
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-            <span className="inline-block w-2 h-2 rounded-full bg-neon-500 animate-pulse" />
-            scalefish API
-          </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">
           <Outlet />
