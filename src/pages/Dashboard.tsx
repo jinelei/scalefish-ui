@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiGrid, FiList, FiPaperclip } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiGrid, FiList, FiPaperclip, FiMousePointer } from 'react-icons/fi'
 import { motion } from 'framer-motion'
-import { searchBookmarks, recordClick } from '../api/bookmarks'
+import { searchBookmarks, recordClick, togglePin } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats } from '../api/categories'
 import { getAllTags, getTagStats } from '../api/tags'
 import type { BookmarkResponse, CategoryResponse, TagResponse, TagStatsResponse } from '../types'
@@ -109,6 +109,11 @@ export default function Dashboard() {
     })
   }
 
+  const handlePin = async (id: number) => {
+    await togglePin(id)
+    fetchData(selectedCategoryIds, selectedTagIds, keyword)
+  }
+
   const hasFilter = selectedCategoryIds.length > 0 || selectedTagIds.length > 0
 
   const selectedTagNames = allTags.filter(t => selectedTagIds.includes(t.id))
@@ -200,13 +205,9 @@ export default function Dashboard() {
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {recent.map((b) => (
-                <a
+                <div
                   key={b.id}
-                  href={b.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => recordClick(b.id)}
-                  className="glass rounded-xl p-4 glass-hover transition-all group block"
+                  className="glass rounded-xl p-4 glass-hover transition-all group"
                 >
                   <div className="flex items-start gap-3">
                     <img
@@ -217,7 +218,9 @@ export default function Dashboard() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold truncate group-hover:text-accent-400 transition-colors">{b.title}</span>
+                        <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(b.id)} className="text-sm font-semibold truncate hover:text-accent-400 transition-colors">
+                          {b.title}
+                        </a>
                         {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
                       </div>
                       <p className="text-xs text-gray-500 truncate mt-0.5">{b.url}</p>
@@ -232,18 +235,24 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                </a>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+                    <span className="flex items-center gap-1 text-xs text-gray-500"><FiMousePointer size={11} /> {b.clickCount}</span>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePin(b.id) }}
+                      className={`p-1.5 rounded hover:bg-white/10 transition-colors ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
+                      title={b.pinned ? '取消置顶' : '置顶'}
+                    >
+                      <FiPaperclip size={13} />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
             <div className="space-y-2">
               {recent.map((b) => (
-                <a
+                <div
                   key={b.id}
-                  href={b.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => recordClick(b.id)}
                   className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors group min-w-0"
                 >
                   <img
@@ -253,7 +262,12 @@ export default function Dashboard() {
                     onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate group-hover:text-accent-400 transition-colors">{b.title}</div>
+                    <div className="flex items-center gap-2">
+                      <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(b.id)} className="text-sm truncate hover:text-accent-400 transition-colors">
+                        {b.title}
+                      </a>
+                      {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
+                    </div>
                     <div className="text-xs text-gray-600 truncate">{b.url}</div>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                       {b.category && (
@@ -269,12 +283,17 @@ export default function Dashboard() {
                       {b.tags.length > 3 && (
                         <span className="text-[10px] text-gray-500">+{b.tags.length - 3}</span>
                       )}
+                      <span className="flex items-center gap-1 text-xs text-gray-500 ml-0.5"><FiMousePointer size={11} /> {b.clickCount}</span>
                     </div>
                   </div>
-                  {b.pinned && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-medium shrink-0 mt-0.5">置顶</span>
-                  )}
-                </a>
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePin(b.id) }}
+                    className={`p-1.5 rounded hover:bg-white/10 transition-colors shrink-0 mt-0.5 ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
+                    title={b.pinned ? '取消置顶' : '置顶'}
+                  >
+                    <FiPaperclip size={13} />
+                  </button>
+                </div>
               ))}
             </div>
           )}
