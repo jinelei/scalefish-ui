@@ -40,24 +40,9 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
   })
-  const catIdsRef = useRef(selectedCategoryIds)
-  const tagIdsRef = useRef(selectedTagIds)
-  useEffect(() => { catIdsRef.current = selectedCategoryIds }, [selectedCategoryIds])
-  useEffect(() => { tagIdsRef.current = selectedTagIds }, [selectedTagIds])
-  const isFirstRender = useRef(true)
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>()
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    searchTimerRef.current = setTimeout(() => {
-      fetchData(catIdsRef.current, tagIdsRef.current, keyword)
-    }, 1000)
-    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current) }
-  }, [keyword]) // eslint-disable-line react-hooks/exhaustive-deps
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
 
-  const fetchData = useCallback((catIds: number[], tagIds: number[], kw: string = '') => {
+  const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string) => {
     setLoading(true)
     const hasFilter = catIds.length > 0 || tagIds.length > 0 || kw.length > 0
     const bmParams: Record<string, unknown> = { page: 0, size: hasFilter ? 100 : 6 }
@@ -88,30 +73,34 @@ export default function Dashboard() {
   }, [viewMode])
 
   useEffect(() => {
-    fetchData([], [])
-  }, [fetchData])
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    if (keyword) {
+      debounceTimer.current = setTimeout(() => {
+        doFetch(selectedCategoryIds, selectedTagIds, keyword)
+      }, 1000)
+    } else {
+      doFetch(selectedCategoryIds, selectedTagIds, keyword)
+    }
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current) }
+  }, [selectedCategoryIds, selectedTagIds, keyword]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const flatCategories = flattenCategories(categories)
 
   const toggleCategory = (id: number) => {
-    setSelectedCategoryIds(prev => {
-      const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
-      fetchData(next, selectedTagIds, keyword)
-      return next
-    })
+    setSelectedCategoryIds(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    )
   }
 
   const toggleTag = (id: number) => {
-    setSelectedTagIds(prev => {
-      const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
-      fetchData(selectedCategoryIds, next, keyword)
-      return next
-    })
+    setSelectedTagIds(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    )
   }
 
   const handlePin = async (id: number) => {
     await togglePin(id)
-    fetchData(selectedCategoryIds, selectedTagIds, keyword)
+    doFetch(selectedCategoryIds, selectedTagIds, keyword)
   }
 
   const hasFilter = selectedCategoryIds.length > 0 || selectedTagIds.length > 0
@@ -136,8 +125,8 @@ export default function Dashboard() {
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-                fetchData(selectedCategoryIds, selectedTagIds, keyword)
+                if (debounceTimer.current) clearTimeout(debounceTimer.current)
+                doFetch(selectedCategoryIds, selectedTagIds, keyword)
               }
             }}
             className="w-full bg-surface-800/60 backdrop-blur-sm rounded-xl pl-11 pr-10 py-3 text-sm text-gray-300 placeholder-gray-500 outline-none transition-all"
@@ -145,7 +134,7 @@ export default function Dashboard() {
           />
           {keyword && (
             <button
-              onClick={() => { setKeyword(''); fetchData(selectedCategoryIds, selectedTagIds, '') }}
+              onClick={() => { if (debounceTimer.current) clearTimeout(debounceTimer.current); setKeyword('') }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors p-0.5 rounded hover:bg-white/5"
             >
               <FiX size={16} />
@@ -324,7 +313,7 @@ export default function Dashboard() {
               {selectedCategoryIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-purple-400 ml-1">({selectedCategoryIds.length})</span>
-                  <button onClick={() => { setSelectedCategoryIds([]); fetchData([], selectedTagIds, keyword) }} className="text-xs text-purple-400/70 hover:text-purple-300 ml-2 transition-colors">清除</button>
+                  <button onClick={() => setSelectedCategoryIds([])} className="text-xs text-purple-400/70 hover:text-purple-300 ml-2 transition-colors">清除</button>
                 </>
               )}
             </div>
@@ -361,7 +350,7 @@ export default function Dashboard() {
               {selectedTagIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-neon-400 ml-1">({selectedTagIds.length})</span>
-                  <button onClick={() => { setSelectedTagIds([]); fetchData(selectedCategoryIds, [], keyword) }} className="text-xs text-neon-400/70 hover:text-neon-300 ml-2 transition-colors">清除</button>
+                  <button onClick={() => setSelectedTagIds([])} className="text-xs text-neon-400/70 hover:text-neon-300 ml-2 transition-colors">清除</button>
                 </>
               )}
             </div>
