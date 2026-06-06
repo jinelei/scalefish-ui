@@ -22,7 +22,7 @@ const steps = [
 
 export default function ChromeExt() {
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="max-w-2xl mx-auto space-y-8">
+    <motion.div variants={container} initial="hidden" animate="show" className="max-w-2xl lg:max-w-5xl mx-auto space-y-8">
       <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-accent-500 to-purple-500 flex items-center justify-center shadow-lg">
           <FiChrome size={32} className="text-white" />
