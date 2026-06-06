@@ -84,8 +84,8 @@ export default function Layout() {
             </button>
             {userMenuOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 z-20 w-40 glass rounded-lg py-1 shadow-xl border border-white/10">
+                <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-50 w-40 glass rounded-lg py-1 shadow-xl border border-white/10">
                   <div className="px-3 py-2 text-xs text-gray-400 border-b border-white/5">
                     {user?.name || user?.username}
                   </div>
