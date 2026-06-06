@@ -40,7 +40,7 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
   })
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>()
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string) => {
     setLoading(true)
