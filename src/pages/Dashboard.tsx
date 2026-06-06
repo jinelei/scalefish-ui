@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiGrid, FiList, FiPaperclip } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import { searchBookmarks, recordClick } from '../api/bookmarks'
@@ -40,6 +40,22 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
   })
+  const catIdsRef = useRef(selectedCategoryIds)
+  const tagIdsRef = useRef(selectedTagIds)
+  useEffect(() => { catIdsRef.current = selectedCategoryIds }, [selectedCategoryIds])
+  useEffect(() => { tagIdsRef.current = selectedTagIds }, [selectedTagIds])
+  const isFirstRender = useRef(true)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    searchTimerRef.current = setTimeout(() => {
+      fetchData(catIdsRef.current, tagIdsRef.current, keyword)
+    }, 1000)
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current) }
+  }, [keyword]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = useCallback((catIds: number[], tagIds: number[], kw: string = '') => {
     setLoading(true)
@@ -125,33 +141,39 @@ export default function Dashboard() {
         ))}
       </div>
 
+      <motion.div variants={item} className="relative">
+        <div className="relative max-w-md mx-auto">
+          <FiSearch size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+                fetchData(selectedCategoryIds, selectedTagIds, keyword)
+              }
+            }}
+            className="w-full bg-surface-800/60 backdrop-blur-sm border border-surface-500/50 rounded-xl pl-11 pr-10 py-3 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-accent-500/60 focus:bg-surface-800/80 transition-all"
+            placeholder="搜索书签标题、URL..."
+          />
+          {keyword && (
+            <button
+              onClick={() => { setKeyword(''); fetchData(selectedCategoryIds, selectedTagIds, '') }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors p-0.5 rounded hover:bg-white/5"
+            >
+              <FiX size={16} />
+            </button>
+          )}
+        </div>
+      </motion.div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
         <motion.div variants={item} className="min-w-0 glass rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4 gap-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-gray-300 shrink-0">
-                {keyword || hasFilter ? '筛选结果' : '最新书签'}
-              </h2>
-              <div className="relative flex-1 max-w-xs min-w-0">
-                <FiSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') fetchData(selectedCategoryIds, selectedTagIds, keyword) }}
-                  className="w-full bg-surface-800 border border-surface-500 rounded-lg pl-8 pr-8 py-1.5 text-xs text-gray-300 outline-none focus:border-accent-500/70 transition-colors"
-                  placeholder="搜索标题、URL..."
-                />
-                {keyword && (
-                  <button
-                    onClick={() => { setKeyword(''); fetchData(selectedCategoryIds, selectedTagIds, '') }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    <FiX size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-300">
+              {keyword || hasFilter ? '筛选结果' : '最新书签'}
+            </h2>
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
