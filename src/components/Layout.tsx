@@ -38,7 +38,7 @@ export default function Layout() {
     <div className="flex h-screen bg-surface-900 overflow-hidden">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="glass border-b border-white/5 h-14 flex items-center px-4 gap-3 shrink-0">
+        <header className="glass border-b border-white/5 h-14 flex items-center px-4 gap-3 shrink-0 relative z-30">
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             className="text-gray-400 hover:text-white transition-colors p-1"
