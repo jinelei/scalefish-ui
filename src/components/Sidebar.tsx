@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { FiGrid, FiBookmark, FiFolder, FiTag, FiLogOut, FiX } from 'react-icons/fi'
+import { FiGrid, FiBookmark, FiFolder, FiTag, FiLogOut, FiX, FiCalendar, FiUsers } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -8,6 +8,8 @@ const links = [
   { to: '/bookmarks', label: '书签', icon: FiBookmark },
   { to: '/categories', label: '分类', icon: FiFolder },
   { to: '/tags', label: '标签', icon: FiTag },
+  { to: '/calendars', label: '日历', icon: FiCalendar },
+  { to: '/contacts', label: '通讯录', icon: FiUsers },
 ]
 
 interface SidebarProps {

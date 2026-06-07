@@ -48,10 +48,11 @@ html {
   --color-surface-700: #e2e8f0;
   --color-surface-600: #cbd5e1;
   --color-surface-500: #94a3b8;
+  --color-gray-200: #1e293b;
   --color-gray-300: #334155;
   --color-gray-400: #475569;
-  --color-gray-500: #64748b;
-  --color-gray-600: #94a3b8;
+  --color-gray-500: #475569;
+  --color-gray-600: #64748b;
 }
 
 :root.light html,

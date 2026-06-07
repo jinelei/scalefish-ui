@@ -120,3 +120,73 @@ export interface ApiTokenResponse {
   lastUsedAt: string | null;
   createdAt: string;
 }
+
+export interface CalendarResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  displayColor: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CalendarEventRequest {
+  title: string;
+  description?: string;
+  location?: string;
+  startTime: string;
+  endTime: string;
+  allDay: boolean;
+  rrule?: string;
+  status?: string;
+  priority?: number;
+  categories?: string;
+  url?: string;
+}
+
+export interface CalendarEventResponse {
+  id: number;
+  calendarId: number;
+  title: string;
+  description: string | null;
+  location: string | null;
+  startTime: string;
+  endTime: string;
+  allDay: boolean;
+  rrule: string | null;
+  status: string;
+  priority: number;
+  categories: string | null;
+  url: string | null;
+  sequence: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddressBookResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactRequest {
+  name: string;
+  email?: string;
+  phone?: string;
+  organization?: string;
+  notes?: string;
+}
+
+export interface ContactResponse {
+  id: number;
+  addressBookId: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  organization: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
