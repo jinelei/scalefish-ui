@@ -6,7 +6,7 @@ import {
   listCalendars, createCalendar, deleteCalendar,
   listEventsByRange, createEvent, updateEvent, deleteEvent,
 } from '../api/calendars'
-import type { CalendarResponse, CalendarEventResponse } from '../types'
+import type { CalendarResponse, CalendarEventRequest, CalendarEventResponse } from '../types'
 
 type ViewMode = 'day' | 'week' | 'month'
 
@@ -146,7 +146,13 @@ export default function Calendars() {
   }, [visibleRange])
 
   function loadCalendars() {
-    listCalendars().then(r => setCalendars(r.data.data || [])).catch(() => {})
+    listCalendars().then(r => {
+      const list = r.data.data || []
+      setCalendars(list)
+      if (!selectedCal && list.length > 0) {
+        setSelectedCal(list[0])
+      }
+    }).catch(() => {})
   }
 
   // Events for selected day

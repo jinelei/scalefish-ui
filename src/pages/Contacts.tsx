@@ -31,7 +31,13 @@ export default function Contacts() {
   }, [selectedBook])
 
   function loadBooks() {
-    listAddressBooks().then(r => setBooks(r.data.data || [])).catch(() => {})
+    listAddressBooks().then(r => {
+      const list = r.data.data || []
+      setBooks(list)
+      if (!selectedBook && list.length > 0) {
+        setSelectedBook(list[0])
+      }
+    }).catch(() => {})
   }
 
   function handleCreateBook() {
