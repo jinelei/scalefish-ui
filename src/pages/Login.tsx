@@ -49,7 +49,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors"
-              placeholder="admin"
+              placeholder="请输入用户名"
               autoComplete="username"
             />
           </div>
@@ -60,7 +60,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors"
-              placeholder="••••••"
+              placeholder="请输入密码"
               autoComplete="current-password"
             />
           </div>

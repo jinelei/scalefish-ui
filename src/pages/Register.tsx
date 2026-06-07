@@ -71,7 +71,7 @@ export default function Register() {
             <label className="text-xs text-gray-500 mb-1 block">用户名 *</label>
             <input value={username} onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors"
-              placeholder="admin" autoComplete="username" />
+              placeholder="请输入用户名" autoComplete="username" />
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">显示名称</label>
