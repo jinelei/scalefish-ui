@@ -9,6 +9,8 @@ import Categories from './pages/Categories'
 import Tags from './pages/Tags'
 import Tokens from './pages/Tokens'
 import ChromeExt from './pages/ChromeExt'
+import IOSGuide from './pages/iOSGuide'
+import HarmonyOSGuide from './pages/HarmonyOSGuide'
 import Settings from './pages/Settings'
 import Calendars from './pages/Calendars'
 import Contacts from './pages/Contacts'
@@ -33,6 +35,8 @@ function AppRoutes() {
         <Route path="/tokens" element={<Tokens />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/chrome-ext" element={<ChromeExt />} />
+        <Route path="/ios-guide" element={<IOSGuide />} />
+        <Route path="/harmonyos-guide" element={<HarmonyOSGuide />} />
         <Route path="/calendars" element={<Calendars />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="*" element={<Navigate to="/" replace />} />

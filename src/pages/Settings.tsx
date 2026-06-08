@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FiUser, FiKey, FiDownload, FiUpload, FiChrome, FiSave, FiPlus, FiCopy, FiCheck, FiTrash2, FiArchive } from 'react-icons/fi'
+import { FiUser, FiKey, FiDownload, FiUpload, FiChrome, FiSave, FiPlus, FiCopy, FiCheck, FiTrash2, FiArchive, FiServer, FiMonitor } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { changePassword, updateProfile } from '../api/auth'
 import { listTokens, createToken, revokeToken } from '../api/tokens'
@@ -206,8 +206,36 @@ export default function Settings() {
   const [changing, setChanging] = useState(false)
   const [nickname, setNickname] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
+  const [activeSection, setActiveSection] = useState('account')
   const fileRef = useRef<HTMLInputElement>(null)
   const { user, logout, refreshUser } = useAuth()
+
+  const sections = [
+    { id: 'account', label: '账户', icon: FiUser },
+    { id: 'password', label: '密码', icon: FiKey },
+    { id: 'token', label: 'Token', icon: FiKey },
+    { id: 'data', label: '数据', icon: FiArchive },
+    { id: 'plugin', label: '插件', icon: FiChrome },
+    { id: 'webdav', label: '同步', icon: FiServer },
+  ]
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -60% 0px' }
+    )
+    for (const s of sections) {
+      const el = document.getElementById(s.id)
+      if (el) observer.observe(el)
+    }
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (user?.name) setNickname(user.name)
@@ -263,10 +291,16 @@ export default function Settings() {
     }
   }
 
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="max-w-2xl lg:max-w-5xl mx-auto space-y-6">
-      {/* 账户 */}
-      <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto lg:grid lg:grid-cols-[1fr_auto] lg:gap-10">
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 min-w-0">
+        {/* 账户 */}
+      <motion.div variants={item} id="account" className="glass rounded-xl p-6 sm:p-8">
         <SectionHeader icon={FiUser} title="账户" desc="用户名和显示名称" />
 
         <div className="space-y-4">
@@ -301,7 +335,7 @@ export default function Settings() {
       </motion.div>
 
       {/* 密码 */}
-      <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8">
+      <motion.div variants={item} id="password" className="glass rounded-xl p-6 sm:p-8">
         <SectionHeader icon={FiKey} title="密码" desc="修改后将自动退出，请重新登录" />
 
         <form onSubmit={handleChangePassword} className="space-y-4">
@@ -350,13 +384,13 @@ export default function Settings() {
       </motion.div>
 
       {/* Token */}
-      <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8">
+      <motion.div variants={item} id="token" className="glass rounded-xl p-6 sm:p-8">
         <SectionHeader icon={FiKey} title="Token" desc="API Token 管理" />
         <TokenSection />
       </motion.div>
 
       {/* 数据 */}
-      <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8">
+      <motion.div variants={item} id="data" className="glass rounded-xl p-6 sm:p-8">
         <SectionHeader icon={FiArchive} title="数据" desc="JSON 格式备份和恢复书签数据" />
 
         <div className="flex items-center gap-3">
@@ -379,7 +413,7 @@ export default function Settings() {
       </motion.div>
 
       {/* 插件 */}
-      <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8">
+      <motion.div variants={item} id="plugin" className="glass rounded-xl p-6 sm:p-8">
         <SectionHeader icon={FiChrome} title="插件" desc="Chrome 扩展" />
 
         <div className="flex items-center gap-3">
@@ -399,6 +433,95 @@ export default function Settings() {
           </a>
         </div>
       </motion.div>
+
+      {/* WebDAV 同步 */}
+      <motion.div variants={item} id="webdav" className="glass rounded-xl p-6 sm:p-8">
+        <SectionHeader icon={FiServer} title="WebDAV 同步" desc="在手机日历和通讯录中同步日程和联系人" />
+
+        <div className="space-y-6">
+          {/* 服务器信息 */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1.5">服务器地址</label>
+            <div className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-accent-300 font-mono select-all">
+              {window.location.origin}/webdav/
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1.5">
+              使用此系统的用户名和密码进行登录认证
+            </p>
+          </div>
+
+          {/* iOS */}
+          <a
+            href="/ios-guide"
+            className="block rounded-xl bg-white/[0.03] border border-white/5 p-5 hover:bg-white/[0.06] transition-colors group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                  <FiMonitor size={18} className="text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-200 group-hover:text-accent-400 transition-colors">iOS</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">日历同步 (CalDAV) + 通讯录同步 (CardDAV)</p>
+                </div>
+              </div>
+              <span className="text-xs text-accent-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                查看详细教程 →
+              </span>
+            </div>
+          </a>
+
+          {/* HarmonyOS */}
+          <a
+            href="/harmonyos-guide"
+            className="block rounded-xl bg-white/[0.03] border border-white/5 p-5 hover:bg-white/[0.06] transition-colors group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                  <FiMonitor size={18} className="text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-200 group-hover:text-accent-400 transition-colors">鸿蒙（HarmonyOS）</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">通过 DAVx⁵ 同步日历和通讯录</p>
+                </div>
+              </div>
+              <span className="text-xs text-accent-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                查看详细教程 →
+              </span>
+            </div>
+          </a>
+        </div>
+      </motion.div>
     </motion.div>
+
+      {/* 右侧锚点导航 */}
+      <motion.aside
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+        className="hidden lg:block"
+      >
+        <nav className="sticky top-24 w-36 space-y-0.5">
+          {sections.map((s) => {
+            const active = activeSection === s.id
+            return (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  active
+                    ? 'text-accent-400'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <s.icon size={14} className={active ? 'text-accent-400' : 'text-gray-500'} />
+                {s.label}
+              </button>
+            )
+          })}
+        </nav>
+      </motion.aside>
+    </div>
   )
 }
