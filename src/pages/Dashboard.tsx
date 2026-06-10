@@ -203,14 +203,7 @@ export default function Dashboard() {
                   key={b.id}
                   className="glass rounded-xl p-4 glass-hover transition-all group"
                 >
-                  <div className="flex items-start gap-3">
-                    <img
-                      src={b.faviconUrl || `https://www.google.com/s2/favicons?domain=${new URL(b.url).hostname}&sz=32`}
-                      alt=""
-                      className="w-8 h-8 rounded-lg shrink-0 mt-0.5"
-                      onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
-                    />
-                    <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(b.id)} className="text-sm font-semibold truncate hover:text-accent-400 transition-colors">
                           {b.title}
@@ -228,7 +221,6 @@ export default function Dashboard() {
                         {b.tags.length > 2 && <span className="text-[10px] text-gray-500">+{b.tags.length - 2}</span>}
                       </div>
                     </div>
-                  </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
                     <span className="flex items-center gap-1 text-xs text-gray-500"><FiMousePointer size={11} /> {b.clickCount}</span>
                     <button
@@ -249,12 +241,6 @@ export default function Dashboard() {
                   key={b.id}
                   className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors group min-w-0"
                 >
-                  <img
-                    src={b.faviconUrl || `https://www.google.com/s2/favicons?domain=${new URL(b.url).hostname}&sz=32`}
-                    alt=""
-                    className="w-5 h-5 rounded shrink-0 mt-0.5"
-                    onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
-                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(b.id)} className="text-sm truncate hover:text-accent-400 transition-colors">

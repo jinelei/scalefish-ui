@@ -3,7 +3,10 @@ import toast from 'react-hot-toast'
 import { searchBookmarks, createBookmark, togglePin } from '../api/bookmarks'
 import { getCategoryTree, createCategory } from '../api/categories'
 import { getAllTags, createTag } from '../api/tags'
+import { createLogger } from '../utils/logger'
 import type { CategoryResponse } from '../types'
+
+const log = createLogger('backup')
 
 interface ExportTag {
   id: number
@@ -114,7 +117,7 @@ export async function exportBackup() {
 function extractErr(e: unknown): string {
   if (axios.isAxiosError(e)) {
     const body = e.response?.data
-    if (body) console.error('服务端响应数据:', JSON.stringify(body, null, 2))
+    if (body) log.error('服务端响应数据:', JSON.stringify(body, null, 2))
     if (typeof body === 'object' && body !== null) {
       const b = body as Record<string, unknown>
       return String(b.message || b.error || e.message)
@@ -136,23 +139,23 @@ export async function importBackup(file: File) {
       data = JSON.parse(text)
     } catch (e) {
       toast.error(`JSON 解析失败：${(e as Error).message}`, { id: toastId, duration: 10000 })
-      console.error('[导入] JSON 解析失败:', e)
+      log.error('JSON 解析失败:', e)
       return
     }
 
     if (!data.root_user) {
       toast.error('JSON 结构错误：缺少 root_user', { id: toastId, duration: 10000 })
-      console.error('[导入] JSON 结构错误：缺少 root_user, 顶层 key:', Object.keys(data))
+      log.error('JSON 结构错误：缺少 root_user, 顶层 key:', Object.keys(data))
       return
     }
     if (!Array.isArray(data.root_user.collections)) {
       toast.error('JSON 结构错误：root_user.collections 应为数组', { id: toastId, duration: 10000 })
-      console.error('[导入] JSON 结构错误：root_user.collections 类型:', typeof data.root_user.collections)
+      log.error('JSON 结构错误：root_user.collections 类型:', typeof data.root_user.collections)
       return
     }
     if (!Array.isArray(data.root_user.pinnedLinks)) {
       toast.error('JSON 结构错误：root_user.pinnedLinks 应为数组', { id: toastId, duration: 10000 })
-      console.error('[导入] JSON 结构错误：root_user.pinnedLinks 类型:', typeof data.root_user.pinnedLinks)
+      log.error('JSON 结构错误：root_user.pinnedLinks 类型:', typeof data.root_user.pinnedLinks)
       return
     }
 
@@ -190,7 +193,7 @@ export async function importBackup(file: File) {
           tagNameMap.set(tagName, res.data.id)
         } catch (e) {
           const msg = `标签 "${tagName}" 创建失败：${extractErr(e)}`
-          console.error('[导入] 标签创建失败:', { tagName, error: e })
+          log.error('标签创建失败:', { tagName, error: e })
           errors.push(msg)
           failed++
         }
@@ -221,25 +224,21 @@ export async function importBackup(file: File) {
           catNameMap.set(col.name, res.data.id)
         } catch (e) {
           const msg = `分类 "${col.name}"（JSON 中的 id=${col.id}, parentId=${col.parentId}）创建失败：${extractErr(e)}`
-          console.error('[导入] 分类创建失败:', { collection: col, error: e })
+          log.error('分类创建失败:', { collection: col, error: e })
           errors.push(msg)
           failed++
         }
       }
     }
 
-    console.log('[导入] 分类映射完成: catIdMap=%s catNameMap=%s',
+    log.info('分类映射完成: catIdMap=%s catNameMap=%s',
       JSON.stringify([...catIdMap.entries()]),
       JSON.stringify([...catNameMap.entries()]))
 
-    console.log('[导入] 分类映射完成: catIdMap=%s catNameMap=%s',
-      JSON.stringify([...catIdMap.entries()]),
-      JSON.stringify([...catNameMap.entries()]))
-
-    console.log('[导入] 开始创建书签: collections=%d', data.root_user.collections.length)
+    log.info('开始创建书签: collections=%d', data.root_user.collections.length)
 
     for (const col of data.root_user.collections) {
-      console.log('[导入] 处理 collection: id=%s name="%s" links=%d', col.id, col.name, col.links?.length ?? 0)
+      log.info('处理 collection: id=%s name="%s" links=%d', col.id, col.name, col.links?.length ?? 0)
       for (const link of col.links ?? []) {
         try {
           const tagIds = (link.tags ?? [])
@@ -247,7 +246,7 @@ export async function importBackup(file: File) {
             .filter((id): id is number => id !== undefined)
           const mappedCategoryId = catIdMap.get(col.id) ?? catIdMap.get(link.collectionId as number) ?? catNameMap.get(col.name)
           if (mappedCategoryId === undefined) {
-            console.warn('[导入] 分类映射全部失败: col.id=%s col.name="%s" link.collectionId=%s catIdMap的大小=%d catNameMap的大小=%d', col.id, col.name, link.collectionId, catIdMap.size, catNameMap.size)
+            log.warn('分类映射全部失败: col.id=%s col.name="%s" link.collectionId=%s catIdMap的大小=%d catNameMap的大小=%d', col.id, col.name, link.collectionId, catIdMap.size, catNameMap.size)
           }
           const res = await createBookmark({
             title: link.name,
@@ -262,7 +261,7 @@ export async function importBackup(file: File) {
           created++
         } catch (e) {
           const msg = `书签 "${link.name}"（URL: ${link.url}, 所属分类: "${col.name}"）创建失败：${extractErr(e)}`
-          console.error('[导入] 书签创建失败:', { link, collection: col.name, error: e })
+          log.error('书签创建失败:', { link, collection: col.name, error: e })
           errors.push(msg)
           failed++
         }
@@ -291,7 +290,7 @@ export async function importBackup(file: File) {
         }
         } catch (e) {
           const msg = `置顶书签 "${link.name}"（URL: ${link.url}）处理失败：${extractErr(e)}`
-          console.error('[导入] 置顶书签处理失败:', { link, error: e })
+          log.error('置顶书签处理失败:', { link, error: e })
           errors.push(msg)
           failed++
         }
@@ -304,7 +303,7 @@ export async function importBackup(file: File) {
       toast.success(summary, { id: toastId, duration: 5000 })
     }
   } catch (e) {
-    console.error('[导入] 意外错误:', e)
+    log.error('意外错误:', e)
     toast.error(`导入失败：${extractErr(e)}`, { id: toastId, duration: 10000 })
   }
 }

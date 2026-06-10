@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
-import { login as loginApi, getMe } from '../api/auth'
+import { login as loginApi, getMe, refreshToken as refreshTokenApi } from '../api/auth'
 import { getStoredRefreshToken } from '../api/client'
+import { createLogger } from '../utils/logger'
 import type { UserInfo } from '../types'
+
+const log = createLogger('AuthContext')
 
 interface AuthContextType {
   user: UserInfo | null
@@ -21,12 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await getMe()
       setUser(res.data)
+      log.debug('User refreshed: userId=%d', res.data.id)
     } catch {
-      // ignore
+      log.warn('Failed to refresh user')
     }
   }, [])
 
   const logout = useCallback(() => {
+    log.info('User logged out')
     setUser(null)
     localStorage.removeItem('scalefish_access_token')
     localStorage.removeItem('scalefish_refresh_token')
@@ -37,24 +42,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('scalefish_access_token')
     const refresh = getStoredRefreshToken()
     if (token && refresh) {
-      getMe()
-        .then((res) => setUser(res.data))
-        .catch(() => {
+      log.debug('Restoring session...')
+      const restore = async () => {
+        try {
+          const res = await getMe()
+          setUser(res.data)
+          log.info('Session restored: userId=%d', res.data.id)
+          return
+        } catch {
+          log.warn('Access token expired, attempting refresh...')
+        }
+
+        try {
+          const res = await refreshTokenApi(refresh)
+          const { accessToken, refreshToken: newRefresh, user: u } = res.data
+          localStorage.setItem('scalefish_access_token', accessToken)
+          localStorage.setItem('scalefish_refresh_token', newRefresh)
+          setUser(u)
+          log.info('Session restored via refresh: userId=%d', u.id)
+        } catch {
+          log.warn('Session restore failed, clearing tokens')
           localStorage.removeItem('scalefish_access_token')
           localStorage.removeItem('scalefish_refresh_token')
-        })
-        .finally(() => setLoading(false))
+        }
+      }
+      restore().finally(() => setLoading(false))
     } else {
+      log.debug('No stored session')
       setLoading(false)
     }
   }, [])
 
   const login = useCallback(async (username: string, password: string) => {
+    log.info('Logging in: username=%s', username)
     const res = await loginApi({ username, password })
     const { accessToken, refreshToken: rt, user: u } = res.data
     localStorage.setItem('scalefish_access_token', accessToken)
     localStorage.setItem('scalefish_refresh_token', rt)
     setUser(u)
+    log.info('Login success: userId=%d', u.id)
   }, [])
 
   return (

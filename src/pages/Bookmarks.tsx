@@ -22,26 +22,6 @@ const itemAnim = {
   show: { opacity: 1, y: 0 },
 }
 
-function Favicon({ url, className = 'w-5 h-5' }: { url: string; className?: string }) {
-  const [src, setSrc] = useState('')
-  useEffect(() => {
-    try {
-      setSrc(`https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`)
-    } catch {
-      setSrc('')
-    }
-  }, [url])
-  if (!src) return <div className={`${className} rounded bg-surface-600`} />
-  return (
-    <img
-      src={src}
-      alt=""
-      className={`${className} rounded shrink-0`}
-      onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden' }}
-    />
-  )
-}
-
 interface BookmarkFormProps {
   initial?: BookmarkResponse
   categories: CategoryResponse[]
@@ -314,7 +294,6 @@ export default function Bookmarks() {
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="glass rounded-xl px-4 py-3 h-14 animate-pulse flex items-center gap-3">
-                <div className="w-5 h-5 rounded bg-surface-600 shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div className="bg-surface-600 h-3 w-1/2 rounded" />
                   <div className="bg-surface-600 h-2 w-1/4 rounded" />
@@ -348,9 +327,7 @@ export default function Bookmarks() {
                 variants={itemAnim}
                 className="glass rounded-xl p-4 glass-hover transition-all group"
               >
-                <div className="flex items-start gap-3">
-                  <Favicon url={b.url} className="w-8 h-8 rounded-lg mt-0.5" />
-                  <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => handleClick(b.id)} className="text-sm font-semibold truncate hover:text-accent-400 transition-colors">
                         {b.title}
@@ -371,7 +348,6 @@ export default function Bookmarks() {
                       )}
                     </div>
                   </div>
-                </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
                   <div className="flex items-center gap-3 text-xs text-gray-500">
                     <span className="flex items-center gap-1"><FiMousePointer size={11} /> {b.clickCount}</span>
@@ -412,7 +388,6 @@ export default function Bookmarks() {
                 variants={itemAnim}
                 className="glass rounded-xl px-4 py-3 flex items-center gap-3 group"
               >
-                <Favicon url={b.url} className="w-5 h-5 rounded shrink-0" />
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
