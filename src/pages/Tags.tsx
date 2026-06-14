@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiTag, FiPlus, FiTrash2 } from 'react-icons/fi'
-import { getAllTags, createTag, deleteTag } from '../api/tags'
+import { FiTag, FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi'
+import { getAllTags, createTag, updateTag, deleteTag } from '../api/tags'
 import type { TagResponse } from '../types'
 import Modal from '../components/Modal'
 
@@ -17,6 +17,9 @@ export default function Tags() {
   const [modalOpen, setModalOpen] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const [creating, setCreating] = useState(false)
+  const [editingTag, setEditingTag] = useState<TagResponse | null>(null)
+  const [editTagName, setEditTagName] = useState('')
+  const [updating, setUpdating] = useState(false)
 
   const fetch = useCallback(async () => {
     setLoading(true)
@@ -45,6 +48,23 @@ export default function Tags() {
       toast.error(e instanceof Error ? e.message : 'Failed to create')
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleEdit = async () => {
+    if (!editingTag) return
+    if (!editTagName.trim()) { toast.error('名称不能为空'); return }
+    setUpdating(true)
+    try {
+      await updateTag(editingTag.id, { name: editTagName.trim() })
+      toast.success('标签已更新')
+      setEditingTag(null)
+      setEditTagName('')
+      fetch()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update')
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -89,6 +109,9 @@ export default function Tags() {
             >
               <FiTag size={13} className="text-accent-400 shrink-0" />
               <span className="text-sm">{t.name}</span>
+              <button onClick={() => { setEditingTag(t); setEditTagName(t.name) }} className="text-gray-600 hover:text-sky-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                <FiEdit2 size={13} />
+              </button>
               <button onClick={() => handleDelete(t.id, t.name)} className="text-gray-600 hover:text-rose-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                 <FiTrash2 size={13} />
               </button>
@@ -115,6 +138,28 @@ export default function Tags() {
               {creating ? '创建中...' : '创建'}
             </button>
             <button onClick={() => { setModalOpen(false); setNewTagName('') }} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!editingTag} onClose={() => { setEditingTag(null); setEditTagName('') }} title="编辑标签">
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">标签名称</label>
+            <input
+              value={editTagName}
+              onChange={(e) => setEditTagName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
+              className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors"
+              placeholder="输入标签名称"
+              autoFocus
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleEdit} disabled={updating} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {updating ? '保存中...' : '保存'}
+            </button>
+            <button onClick={() => { setEditingTag(null); setEditTagName('') }} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
           </div>
         </div>
       </Modal>

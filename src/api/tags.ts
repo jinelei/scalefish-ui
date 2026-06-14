@@ -18,6 +18,14 @@ export async function createTag(
   return res.data;
 }
 
+export async function updateTag(
+  id: number,
+  req: TagRequest,
+): Promise<GenericResult<TagResponse>> {
+  const res = await client.put(`/tags/${id}`, req);
+  return res.data;
+}
+
 export async function deleteTag(id: number): Promise<void> {
   await client.delete(`/tags/${id}`);
 }

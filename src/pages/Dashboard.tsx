@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiGrid, FiList, FiPaperclip, FiMousePointer } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX } from 'react-icons/fi'
 import { motion } from 'framer-motion'
-import { searchBookmarks, recordClick, togglePin } from '../api/bookmarks'
+import { searchBookmarks, togglePin } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats } from '../api/categories'
 import { getAllTags, getTagStats } from '../api/tags'
-import type { BookmarkResponse, CategoryResponse, TagResponse, TagStatsResponse } from '../types'
+import type { BookmarkResponse, CategoryResponse, TagStatsResponse, TagResponse } from '../types'
+import BookmarkView, { type ViewMode } from '../components/BookmarkView'
 
 const container = {
   hidden: {},
@@ -39,14 +40,19 @@ export default function Dashboard() {
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    return (localStorage.getItem('dashboardBookmarkView') as 'grid' | 'list') || 'list'
+  const [totalElements, setTotalElements] = useState(0)
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    return (localStorage.getItem('dashboardBookmarkView') as ViewMode) || 'list'
   })
+  const [pageSize, setPageSize] = useState(() => {
+    return Number(localStorage.getItem('dashboardPageSize')) || 12
+  })
+  const pageSizeRef = useRef(pageSize)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string, pg: number) => {
     setLoading(true)
-    const bmParams: Record<string, unknown> = { page: pg, size: 10 }
+    const bmParams: Record<string, unknown> = { page: pg, size: pageSizeRef.current }
     if (catIds.length > 0) bmParams.categoryIds = catIds
     if (tagIds.length > 0) bmParams.tagIds = tagIds
     if (kw.length > 0) bmParams.keyword = kw
@@ -63,16 +69,13 @@ export default function Dashboard() {
       setStats({ bookmarks: b.data.totalElements, categories: c.data.length, tags: t.data.length })
       setRecent(b.data.content)
       setTotalPages(b.data.totalPages)
+      setTotalElements(b.data.totalElements)
       setCategories(c.data)
       setAllTags(t.data)
       setTagStats(s.data)
       setCatStats(new Map(cs.data.map(cs2 => [cs2.id, cs2.count])))
     }).finally(() => setLoading(false))
   }, [])
-
-  useEffect(() => {
-    localStorage.setItem('dashboardBookmarkView', viewMode)
-  }, [viewMode])
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
@@ -105,6 +108,14 @@ export default function Dashboard() {
   const handlePin = async (id: number) => {
     await togglePin(id)
     doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    pageSizeRef.current = newSize
+    setPageSize(newSize)
+    localStorage.setItem('dashboardPageSize', String(newSize))
+    setPage(0)
+    doFetch(selectedCategoryIds, selectedTagIds, keyword, 0)
   }
 
   const hasFilter = selectedCategoryIds.length > 0 || selectedTagIds.length > 0
@@ -154,150 +165,21 @@ export default function Dashboard() {
             <h2 className="text-sm font-semibold text-gray-300">
               {keyword || hasFilter ? '筛选结果' : '最新书签'}
             </h2>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
-                title="图块视图"
-              >
-                <FiGrid size={14} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
-                title="列表视图"
-              >
-                <FiList size={14} />
-              </button>
-            </div>
           </div>
-          {loading ? (
-            viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="glass rounded-xl p-4 h-24 animate-pulse">
-                    <div className="bg-white/10 h-4 w-3/4 rounded mb-3" />
-                    <div className="bg-white/10 h-3 w-1/2 rounded" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2 animate-pulse">
-                    <div className="w-5 h-5 rounded bg-white/10" />
-                    <div className="flex-1 space-y-1">
-                      <div className="h-4 w-48 rounded bg-white/10" />
-                      <div className="h-3 w-64 rounded bg-white/5" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : recent.length === 0 ? (
-            <p className="text-sm text-gray-500 py-8 text-center">暂无书签</p>
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {recent.map((b) => (
-                <div
-                  key={b.id}
-                  className="glass rounded-xl p-4 glass-hover transition-all group"
-                >
-                  <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(b.id)} className="text-sm font-semibold truncate hover:text-accent-400 transition-colors">
-                          {b.title}
-                        </a>
-                        {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
-                      </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{b.url}</p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        {b.category && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium">{b.category.name}</span>
-                        )}
-                        {b.tags.slice(0, 2).map(t => (
-                          <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-accent-500/10 text-accent-400">{t.name}</span>
-                        ))}
-                        {b.tags.length > 2 && <span className="text-[10px] text-gray-500">+{b.tags.length - 2}</span>}
-                      </div>
-                    </div>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-                    <span className="flex items-center gap-1 text-xs text-gray-500"><FiMousePointer size={11} /> {b.clickCount}</span>
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePin(b.id) }}
-                      className={`p-1.5 rounded hover:bg-white/10 transition-colors ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
-                      title={b.pinned ? '取消置顶' : '置顶'}
-                    >
-                      <FiPaperclip size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {recent.map((b) => (
-                <div
-                  key={b.id}
-                  className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors group min-w-0"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(b.id)} className="text-sm truncate hover:text-accent-400 transition-colors">
-                        {b.title}
-                      </a>
-                      {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
-                    </div>
-                    <div className="text-xs text-gray-600 truncate">{b.url}</div>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      {b.category && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 leading-none">
-                          {b.category.name}
-                        </span>
-                      )}
-                      {b.tags.slice(0, 3).map(t => (
-                        <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-neon-500/10 text-neon-400 border border-neon-500/20 leading-none">
-                          # {t.name}
-                        </span>
-                      ))}
-                      {b.tags.length > 3 && (
-                        <span className="text-[10px] text-gray-500">+{b.tags.length - 3}</span>
-                      )}
-                      <span className="flex items-center gap-1 text-xs text-gray-500 ml-0.5"><FiMousePointer size={11} /> {b.clickCount}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePin(b.id) }}
-                    className={`p-1.5 rounded hover:bg-white/10 transition-colors shrink-0 mt-0.5 ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
-                    title={b.pinned ? '取消置顶' : '置顶'}
-                  >
-                    <FiPaperclip size={13} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-white/5">
-              <button
-                disabled={page === 0}
-                onClick={() => { const p = page - 1; setPage(p); doFetch(selectedCategoryIds, selectedTagIds, keyword, p) }}
-                className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                上一页
-              </button>
-              <span className="text-xs text-gray-500">
-                {page + 1} / {totalPages}
-              </span>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => { const p = page + 1; setPage(p); doFetch(selectedCategoryIds, selectedTagIds, keyword, p) }}
-                className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                下一页
-              </button>
-            </div>
-          )}
+          <BookmarkView
+            bookmarks={recent}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            loading={loading}
+            totalPages={totalPages}
+            currentPage={page}
+            onPageChange={(p) => { setPage(p); doFetch(selectedCategoryIds, selectedTagIds, keyword, p) }}
+            onPin={handlePin}
+            storageKey="dashboardBookmarkView"
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            totalElements={totalElements}
+          />
         </motion.div>
 
         <div className="space-y-4">
