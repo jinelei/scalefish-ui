@@ -38,10 +38,10 @@ export default function Layout() {
           >
             <HiMenuAlt2 size={22} />
           </button>
-          <div className="flex items-baseline gap-2 min-w-0">
+          <button onClick={() => navigate('/')} className="flex items-baseline gap-2 min-w-0 cursor-pointer">
             <span className="text-sm font-bold gradient-text truncate">{title}</span>
             {subtitle && <span className="text-[11px] text-gray-500 truncate">{subtitle}</span>}
-          </div>
+          </button>
           <div className="flex-1" />
           <button
             onClick={cycleTheme}
