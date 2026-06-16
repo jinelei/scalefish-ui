@@ -145,7 +145,7 @@ export default function Dashboard() {
                 doFetch(selectedCategoryIds, selectedTagIds, keyword, 0)
               }
             }}
-            className="w-full bg-surface-800/60 backdrop-blur-sm rounded-xl pl-11 pr-10 py-3 text-sm text-gray-300 placeholder-gray-500 outline-none transition-all"
+            className="w-full glass rounded-xl pl-11 pr-10 py-3 text-sm text-gray-300 placeholder-gray-500 outline-none transition-all"
             placeholder="搜索书签标题、URL..."
           />
           {keyword && (
