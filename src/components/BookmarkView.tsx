@@ -321,69 +321,67 @@ export default function BookmarkView({
           )}
 
           {totalPages > 0 && (
-            <div className="flex items-center justify-center mt-4 pt-4 border-t border-white/5 overflow-x-auto">
-              <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-gray-500 shrink-0">
-                {totalElements !== undefined && (
-                  <span className="text-gray-500 mr-0.5 sm:mr-1 whitespace-nowrap">
-                    共{totalElements}条
-                  </span>
-                )}
-                {pageSize !== undefined && onPageSizeChange && (
-                  <>
-                    <span className="hidden sm:inline whitespace-nowrap">每页</span>
-                    <select
-                      value={pageSize}
-                      onChange={e => onPageSizeChange(Number(e.target.value))}
-                      className="bg-surface-800 border border-surface-500 rounded px-1 sm:px-2 py-1 text-xs text-gray-300 outline-none cursor-pointer w-12 sm:w-auto"
-                    >
-                      {[12, 24, 36, 48, 64].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </>
-                )}
-                <div className="mx-0.5 sm:mx-1 w-px h-3.5 bg-white/10 shrink-0" />
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 mt-4 pt-4 border-t border-white/5">
+              {totalElements !== undefined && (
+                <span className="text-xs text-gray-500 whitespace-nowrap">
+                  共{totalElements}条
+                </span>
+              )}
+              {pageSize !== undefined && onPageSizeChange && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <span className="hidden sm:inline whitespace-nowrap">每页</span>
+                  <select
+                    value={pageSize}
+                    onChange={e => onPageSizeChange(Number(e.target.value))}
+                    className="bg-surface-800 border border-surface-500 rounded px-1 sm:px-2 py-1 text-xs text-gray-300 outline-none cursor-pointer w-12 sm:w-auto"
+                  >
+                    {[12, 24, 36, 48, 64].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </span>
+              )}
+              <div className="flex items-center gap-1 text-xs">
                 <button
                   disabled={currentPage === 0}
                   onClick={() => onPageChange(currentPage - 1)}
-                  className="px-1.5 sm:px-2 py-1 rounded text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><polyline points="15 18 9 12 15 6" /></svg>
                 </button>
-                <span className="text-gray-400 min-w-[3.5rem] sm:min-w-[4rem] text-center select-none whitespace-nowrap">
+                <span className="text-gray-400 min-w-[2.5rem] sm:min-w-[4rem] text-center select-none whitespace-nowrap">
                   {currentPage + 1}/{totalPages}
                 </span>
                 <button
                   disabled={currentPage >= totalPages - 1}
                   onClick={() => onPageChange(currentPage + 1)}
-                  className="px-1.5 sm:px-2 py-1 rounded text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><polyline points="9 18 15 12 9 6" /></svg>
                 </button>
-                {totalPages > 1 && (
-                  <>
-                    <div className="mx-0.5 sm:mx-1 w-px h-3.5 bg-white/10 shrink-0" />
-                    <span className="text-gray-500 whitespace-nowrap">跳至</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={totalPages}
-                      placeholder="#"
-                      className="w-12 sm:w-14 bg-surface-800 border border-surface-500 rounded px-1 sm:px-2 py-1 text-xs text-gray-300 outline-none text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          const input = e.target as HTMLInputElement
-                          const val = parseInt(input.value)
-                          if (val >= 1 && val <= totalPages) {
-                            onPageChange(val - 1)
-                          }
-                          input.value = ''
-                        }
-                      }}
-                    />
-                  </>
-                )}
               </div>
+              {totalPages > 1 && (
+                <span className="hidden sm:flex items-center gap-1 text-xs text-gray-500">
+                  <span className="whitespace-nowrap">跳至</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    placeholder="#"
+                    className="w-14 bg-surface-800 border border-surface-500 rounded px-2 py-1 text-xs text-gray-300 outline-none text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement
+                        const val = parseInt(input.value)
+                        if (val >= 1 && val <= totalPages) {
+                          onPageChange(val - 1)
+                        }
+                        input.value = ''
+                      }
+                    }}
+                  />
+                </span>
+              )}
             </div>
           )}
         </>
