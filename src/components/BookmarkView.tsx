@@ -28,6 +28,7 @@ interface BookmarkViewProps {
   onPageSizeChange?: (size: number) => void
   onAdd?: () => void
   totalElements?: number
+  title?: string
 }
 
 const containerAnim = {
@@ -82,6 +83,7 @@ export default function BookmarkView({
   onPageSizeChange,
   onAdd,
   totalElements,
+  title,
 }: BookmarkViewProps) {
   const initialRender = useRef(true)
   const [gridCols, setGridCols] = useState<number>(() => {
@@ -138,7 +140,12 @@ export default function BookmarkView({
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 min-w-0">
+          {title && (
+            <h2 className="text-sm font-semibold text-gray-300 truncate shrink-0">
+              {title}
+            </h2>
+          )}
           {onAdd && (
             <button
               onClick={onAdd}

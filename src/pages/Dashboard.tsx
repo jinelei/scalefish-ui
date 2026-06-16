@@ -161,12 +161,8 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
         <motion.div variants={item} className="min-w-0 glass rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-300">
-              {keyword || hasFilter ? '筛选结果' : '最新书签'}
-            </h2>
-          </div>
           <BookmarkView
+            title={keyword || hasFilter ? '筛选结果' : '最新书签'}
             bookmarks={recent}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
