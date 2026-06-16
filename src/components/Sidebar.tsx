@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { FiGrid, FiBookmark, FiFolder, FiTag, FiLogOut, FiX, FiCalendar, FiUsers } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
@@ -19,6 +19,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { logout } = useAuth()
+  const navigate = useNavigate()
   return (
     <AnimatePresence initial={false}>
       {open && (
@@ -40,14 +41,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           >
             <div className="w-[220px] h-full flex flex-col">
               <div className="h-14 flex items-center justify-between px-5 border-b border-white/5 shrink-0">
-                <div className="flex items-center gap-2.5">
+                <button onClick={() => { navigate('/'); onClose() }} className="flex items-center gap-2.5 cursor-pointer">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
                     S
                   </div>
                   <span className="font-semibold text-sm tracking-wide">
                     <span className="gradient-text">scalefish</span>
                   </span>
-                </div>
+                </button>
                 <button onClick={onClose} className="md:hidden text-gray-500 hover:text-white transition-colors p-1">
                   <FiX size={18} />
                 </button>
