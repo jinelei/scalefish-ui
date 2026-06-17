@@ -82,9 +82,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 <FiLogOut size={17} />
                 退出登录
               </button>
-              <div className="text-[10px] text-gray-600 uppercase tracking-widest pl-3">
-                v1.0.0
-              </div>
             </div>
           </div>
         </motion.aside>

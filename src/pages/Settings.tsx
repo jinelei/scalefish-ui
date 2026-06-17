@@ -493,7 +493,10 @@ export default function Settings() {
           </a>
         </div>
       </motion.div>
-    </motion.div>
+        <div className="text-center text-[10px] text-gray-600 uppercase tracking-widest pt-4">
+          v1.0.0
+        </div>
+      </motion.div>
 
       {/* 右侧锚点导航 */}
       <motion.aside
