@@ -41,7 +41,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           >
             <div className="w-[220px] h-full flex flex-col">
               <div className="h-14 flex items-center justify-between px-5 border-b border-white/5 shrink-0">
-                <button onClick={() => { navigate('/'); onClose() }} className="flex items-center gap-2.5 cursor-pointer">
+                <button onClick={() => navigate('/')} className="flex items-center gap-2.5 cursor-pointer">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
                     S
                   </div>
