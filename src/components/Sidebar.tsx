@@ -13,9 +13,10 @@ const links = [
 interface SidebarProps {
   open: boolean
   onClose: () => void
+  displayName?: string
 }
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({ open, onClose, displayName }: SidebarProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
   return (
@@ -41,10 +42,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <div className="h-14 flex items-center justify-between px-5 border-b border-white/5 shrink-0">
                 <button onClick={() => navigate('/')} className="flex items-center gap-2.5 cursor-pointer">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
-                    S
+                    {(displayName || 'S')[0].toUpperCase()}
                   </div>
                   <span className="font-semibold text-sm tracking-wide">
-                    <span className="gradient-text">scalefish</span>
+                    <span className="gradient-text">{displayName || 'scalefish'}</span>
                   </span>
                 </button>
                 <button onClick={onClose} className="md:hidden text-gray-500 hover:text-white transition-colors p-1">

@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { FiSun, FiMoon, FiMonitor, FiSettings, FiLogOut } from 'react-icons/fi'
 import { HiMenuAlt2 } from 'react-icons/hi'
 import Sidebar from './Sidebar'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
+import { getAppConfig } from '../api/app-config'
 
 const pageTitles: Record<string, [string, string]> = {
   '/': ['Dashboard', '书签管理概览'],
@@ -17,17 +18,30 @@ const pageTitles: Record<string, [string, string]> = {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [displayName, setDisplayName] = useState('')
   const { theme, cycleTheme } = useTheme()
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
   const [title, subtitle] = pageTitles[location.pathname] || ['', '']
+
+  useEffect(() => {
+    getAppConfig().then(res => {
+      const name = res.data?.display_name
+      if (name) setDisplayName(name)
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const name = displayName || 'scalefish'
+    document.title = `${name} - ${subtitle || title}`
+  }, [displayName, location.pathname, title, subtitle])
   const themeLabel = theme === 'light' ? '亮色' : theme === 'dark' ? '暗色' : '跟随系统'
 
   return (
     <div className="flex h-screen bg-surface-900 overflow-hidden">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} displayName={displayName} />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="glass border-b border-white/5 h-14 flex items-center px-4 gap-3 shrink-0 relative z-30">
           <button
