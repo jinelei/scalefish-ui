@@ -11,8 +11,6 @@ const pageTitles: Record<string, [string, string]> = {
   '/bookmarks': ['书签', '书签管理'],
   '/categories': ['分类', '树形结构管理'],
   '/tags': ['标签', '标签管理'],
-  '/calendars': ['日历', '日程管理'],
-  '/contacts': ['通讯录', '联系人管理'],
   '/settings': ['设置', '账户 / Token / 插件'],
 }
 

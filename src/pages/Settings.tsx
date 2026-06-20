@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FiUser, FiKey, FiDownload, FiUpload, FiChrome, FiSave, FiPlus, FiCopy, FiCheck, FiTrash2, FiArchive, FiServer, FiMonitor } from 'react-icons/fi'
+import { FiUser, FiKey, FiDownload, FiUpload, FiChrome, FiSave, FiPlus, FiCopy, FiCheck, FiTrash2, FiArchive } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { changePassword, updateProfile } from '../api/auth'
 import { listTokens, createToken, revokeToken } from '../api/tokens'
@@ -216,7 +216,6 @@ export default function Settings() {
     { id: 'token', label: 'Token', icon: FiKey },
     { id: 'data', label: '数据', icon: FiArchive },
     { id: 'plugin', label: '插件', icon: FiChrome },
-    { id: 'webdav', label: '同步', icon: FiServer },
   ]
 
   useEffect(() => {
@@ -430,66 +429,6 @@ export default function Settings() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs transition-all active:scale-95"
           >
             查看安装步骤
-          </a>
-        </div>
-      </motion.div>
-
-      {/* WebDAV 同步 */}
-      <motion.div variants={item} id="webdav" className="glass rounded-xl p-6 sm:p-8">
-        <SectionHeader icon={FiServer} title="WebDAV 同步" desc="在手机日历和通讯录中同步日程和联系人" />
-
-        <div className="space-y-6">
-          {/* 服务器信息 */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1.5">服务器地址</label>
-            <div className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-accent-300 font-mono select-all">
-              {window.location.origin}/webdav/
-            </div>
-            <p className="text-[11px] text-gray-500 mt-1.5">
-              使用此系统的用户名和密码进行登录认证
-            </p>
-          </div>
-
-          {/* iOS */}
-          <a
-            href="/ios-guide"
-            className="block rounded-xl bg-white/[0.03] border border-white/5 p-5 hover:bg-white/[0.06] transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                  <FiMonitor size={18} className="text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-200 group-hover:text-accent-400 transition-colors">iOS</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">日历同步 (CalDAV) + 通讯录同步 (CardDAV)</p>
-                </div>
-              </div>
-              <span className="text-xs text-accent-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                查看详细教程 →
-              </span>
-            </div>
-          </a>
-
-          {/* HarmonyOS */}
-          <a
-            href="/harmonyos-guide"
-            className="block rounded-xl bg-white/[0.03] border border-white/5 p-5 hover:bg-white/[0.06] transition-colors group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                  <FiMonitor size={18} className="text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-200 group-hover:text-accent-400 transition-colors">鸿蒙（HarmonyOS）</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">通过 DAVx⁵ 同步日历和通讯录</p>
-                </div>
-              </div>
-              <span className="text-xs text-accent-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                查看详细教程 →
-              </span>
-            </div>
           </a>
         </div>
       </motion.div>

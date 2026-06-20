@@ -3,11 +3,11 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
   FiSearch, FiExternalLink,
-  FiTrash2, FiEdit2, FiX, FiPaperclip,
+  FiTrash2, FiEdit2, FiX, FiPaperclip, FiPlus,
 } from 'react-icons/fi'
 import { searchBookmarks, createBookmark, updateBookmark, deleteBookmark, togglePin, recordClick } from '../api/bookmarks'
-import { getCategoryTree } from '../api/categories'
-import { getAllTags } from '../api/tags'
+import { getCategoryTree, createCategory } from '../api/categories'
+import { getAllTags, createTag } from '../api/tags'
 import type { BookmarkResponse, CategoryResponse, TagResponse, BookmarkSearchParams, BookmarkRequest } from '../types'
 import Modal from '../components/Modal'
 import BookmarkView, { type ViewMode } from '../components/BookmarkView'
@@ -23,15 +23,24 @@ interface BookmarkFormProps {
   tags: TagResponse[]
   onSubmit: (data: BookmarkRequest) => Promise<void>
   onCancel: () => void
+  onCategoryCreated?: (cat: CategoryResponse) => void
+  onTagCreated?: (tag: TagResponse) => void
 }
 
-function BookmarkForm({ initial, categories, tags, onSubmit, onCancel }: BookmarkFormProps) {
+function BookmarkForm({ initial, categories, tags, onSubmit, onCancel, onCategoryCreated, onTagCreated }: BookmarkFormProps) {
   const [title, setTitle] = useState(initial?.title || '')
   const [url, setUrl] = useState(initial?.url || '')
   const [description, setDescription] = useState(initial?.description || '')
   const [categoryId, setCategoryId] = useState<number | undefined>(initial?.category?.id)
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initial?.tags.map((t) => t.id) || [])
   const [submitting, setSubmitting] = useState(false)
+
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
+  const [creatingTag, setCreatingTag] = useState(false)
+  const [showNewTag, setShowNewTag] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +60,40 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel }: Bookmar
     setSelectedTagIds((prev) => prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id])
   }
 
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return
+    setCreatingCategory(true)
+    try {
+      const res = await createCategory({ name: newCategoryName.trim() })
+      setCategoryId(res.data.id)
+      setNewCategoryName('')
+      setShowNewCategory(false)
+      onCategoryCreated?.(res.data)
+      toast.success('分类已创建')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '创建分类失败')
+    } finally {
+      setCreatingCategory(false)
+    }
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    setCreatingTag(true)
+    try {
+      const res = await createTag({ name: newTagName.trim() })
+      setSelectedTagIds((prev) => [...prev, res.data.id])
+      setNewTagName('')
+      setShowNewTag(false)
+      onTagCreated?.(res.data)
+      toast.success('标签已创建')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '创建标签失败')
+    } finally {
+      setCreatingTag(false)
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -67,10 +110,23 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel }: Bookmar
       </div>
       <div>
         <label className="text-xs text-gray-400 mb-1 block">分类</label>
-        <select value={categoryId || ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
-          <option value="">无分类</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <div className="flex gap-2">
+          <select value={categoryId || ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+            <option value="">无分类</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-gray-400 hover:text-accent-400 hover:border-accent-500/50 transition-colors" title="新建分类">
+            <FiPlus size={16} />
+          </button>
+        </div>
+        {showNewCategory && (
+          <div className="flex gap-2 mt-2">
+            <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="分类名称" className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()} />
+            <button type="button" onClick={handleCreateCategory} disabled={creatingCategory || !newCategoryName.trim()} className="px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-medium transition-colors">
+              {creatingCategory ? '...' : '创建'}
+            </button>
+          </div>
+        )}
       </div>
       <div>
         <label className="text-xs text-gray-400 mb-1 block">标签</label>
@@ -80,7 +136,18 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel }: Bookmar
               {t.name}
             </button>
           ))}
+          <button type="button" onClick={() => { setShowNewTag(!showNewTag); setNewTagName('') }} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border border-dashed border-surface-500 text-gray-400 hover:text-accent-400 hover:border-accent-500/50 ${showNewTag ? 'border-accent-500/50 text-accent-400' : ''}`}>
+            <FiPlus size={14} className="inline" /> 新建
+          </button>
         </div>
+        {showNewTag && (
+          <div className="flex gap-2 mt-2">
+            <input value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="标签名称" className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()} />
+            <button type="button" onClick={handleCreateTag} disabled={creatingTag || !newTagName.trim()} className="px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-medium transition-colors">
+              {creatingTag ? '...' : '创建'}
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={submitting} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
@@ -213,6 +280,14 @@ export default function Bookmarks() {
     setModalOpen(true)
   }
 
+  const handleCategoryCreated = useCallback((cat: CategoryResponse) => {
+    setCategories((prev) => [...prev, cat])
+  }, [])
+
+  const handleTagCreated = useCallback((tag: TagResponse) => {
+    setTags((prev) => [...prev, tag])
+  }, [])
+
   const clearFilters = () => {
     setSearchKeyword('')
     setFilterCategory(undefined)
@@ -328,6 +403,8 @@ export default function Bookmarks() {
           tags={tags}
           onSubmit={editing ? handleUpdate : handleCreate}
           onCancel={() => { setModalOpen(false); setEditing(undefined) }}
+          onCategoryCreated={handleCategoryCreated}
+          onTagCreated={handleTagCreated}
         />
       </Modal>
     </motion.div>
