@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiExternalLink, FiPaperclip, FiEdit2, FiTrash2, FiPlus, FiCheck } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { searchBookmarks, togglePin, updateBookmark, deleteBookmark, batchUpdateBookmarks } from '../api/bookmarks'
+import { searchBookmarks, togglePin, updateBookmark, deleteBookmark, batchUpdateBookmarks, createBookmark } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats, createCategory, updateCategory, deleteCategory } from '../api/categories'
 import { getAllTags, getTagStats, createTag, updateTag, deleteTag } from '../api/tags'
 import type { BookmarkResponse, CategoryResponse, TagStatsResponse, TagResponse, BookmarkRequest, CategoryRequest } from '../types'
@@ -27,6 +27,78 @@ function flattenCategories(
     { id: c.id, name: c.name, label: parentPath.length > 0 ? `${parentPath.join(' › ')} › ${c.name}` : c.name },
     ...flattenCategories(c.children, [...parentPath, c.name]),
   ])
+}
+
+function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
+  categories: CategoryResponse[]
+  allTags: TagResponse[]
+  onSubmit: (data: BookmarkRequest) => Promise<void>
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState('')
+  const [url, setUrl] = useState('')
+  const [description, setDescription] = useState('')
+  const [categoryId, setCategoryId] = useState<number | undefined>()
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [submitting, setSubmitting] = useState(false)
+
+  const toggleTag = (id: number) => {
+    setSelectedTagIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim() || !url.trim()) {
+      toast.error('标题和 URL 不能为空')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await onSubmit({ title: title.trim(), url: url.trim(), description: description.trim() || undefined, categoryId, tagIds: selectedTagIds.length ? selectedTagIds : undefined })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">标题 *</label>
+        <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="书签标题" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">URL *</label>
+        <input value={url} onChange={e => setUrl(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="https://..." />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">描述</label>
+        <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors resize-none h-20" placeholder="可选描述" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">分类</label>
+        <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+          <option value="">无分类</option>
+          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">标签</label>
+        <div className="flex flex-wrap gap-1.5">
+          {allTags.map(t => (
+            <button key={t.id} type="button" onClick={() => toggleTag(t.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${selectedTagIds.includes(t.id) ? 'bg-accent-500/20 text-accent-400 border border-accent-500/30' : 'bg-surface-800 text-gray-400 border border-surface-500 hover:border-surface-400'}`}>
+              {t.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-3 pt-2">
+        <button type="submit" disabled={submitting} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+          {submitting ? '创建中...' : '创建'}
+        </button>
+        <button type="button" onClick={onCancel} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+      </div>
+    </form>
+  )
 }
 
 function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel }: {
@@ -146,6 +218,7 @@ export default function Dashboard() {
   const [tagFormName, setTagFormName] = useState('')
   const [tagFormSubmitting, setTagFormSubmitting] = useState(false)
   const [editingBookmark, setEditingBookmark] = useState<BookmarkResponse | null>(null)
+  const [showCreateBookmark, setShowCreateBookmark] = useState(false)
 
   const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string, pg: number) => {
     setLoading(true)
@@ -276,6 +349,13 @@ export default function Dashboard() {
     await updateBookmark(editingBookmark.id, data)
     toast.success('书签已更新')
     setEditingBookmark(null)
+    doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+  }
+
+  const handleCreateBookmark = async (data: BookmarkRequest) => {
+    await createBookmark(data)
+    toast.success('书签已创建')
+    setShowCreateBookmark(false)
     doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
   }
 
@@ -413,6 +493,7 @@ export default function Dashboard() {
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             loading={loading}
+            onAdd={() => setShowCreateBookmark(true)}
             totalPages={totalPages}
             currentPage={page}
             onPageChange={(p) => { setPage(p); doFetch(selectedCategoryIds, selectedTagIds, keyword, p) }}
@@ -670,6 +751,15 @@ export default function Dashboard() {
             onCancel={() => setEditingBookmark(null)}
           />
         )}
+      </Modal>
+
+      <Modal open={showCreateBookmark} onClose={() => setShowCreateBookmark(false)} title="新建书签">
+        <CreateBookmarkForm
+          categories={categories}
+          allTags={allTags}
+          onSubmit={handleCreateBookmark}
+          onCancel={() => setShowCreateBookmark(false)}
+        />
       </Modal>
 
       <Modal open={batchCategoryModalOpen} onClose={() => setBatchCategoryModalOpen(false)} title="批量更改分类">
