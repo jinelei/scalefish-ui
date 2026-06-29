@@ -4,8 +4,6 @@ import toast from 'react-hot-toast'
 import { FiFolder, FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronRight } from 'react-icons/fi'
 import { getCategoryTree, getCategoryStats, createCategory, updateCategory, deleteCategory } from '../api/categories'
 import type { CategoryResponse, CategoryRequest } from '../types'
-import Modal from '../components/Modal'
-
 const container = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06 } },
@@ -187,27 +185,48 @@ export default function Categories() {
             <div key={i} className="bg-surface-600 h-8 rounded animate-pulse" />
           ))}
         </div>
-      ) : categories.length === 0 ? (
+      ) : categories.length === 0 && !modalOpen ? (
         <div className="text-center py-16 text-gray-500">
-          <FiFolder size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">暂无分类</p>
-        </div>
-      ) : (
-        <div className="glass rounded-xl p-4 space-y-1">
           <div
             onClick={() => { setEditing(undefined); setModalOpen(true) }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors group"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors"
           >
             <FiPlus size={15} />
             <span className="text-sm font-medium">新建分类</span>
           </div>
+          <p className="text-sm mt-4">暂无分类</p>
+        </div>
+      ) : categories.length === 0 && modalOpen ? (
+        <div className="glass rounded-xl p-4">
+          <div className="p-3 rounded-lg bg-surface-800/50 border border-accent-500/20">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold text-accent-400">新建分类</span>
+            </div>
+            <CategoryForm initial={undefined} allCategories={[]} onSubmit={handleCreate} onCancel={() => { setModalOpen(false); setEditing(undefined) }} />
+          </div>
+        </div>
+      ) : (
+        <div className="glass rounded-xl p-4 space-y-1">
+          {modalOpen && (
+            <div className="p-3 rounded-lg bg-surface-800/50 border border-accent-500/20">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-semibold text-accent-400">{editing ? '编辑分类' : '新建分类'}</span>
+              </div>
+              <CategoryForm initial={editing} allCategories={categories} onSubmit={editing ? handleUpdate : handleCreate} onCancel={() => { setModalOpen(false); setEditing(undefined) }} />
+            </div>
+          )}
+          {!modalOpen && (
+            <div
+              onClick={() => { setEditing(undefined); setModalOpen(true) }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors group"
+            >
+              <FiPlus size={15} />
+              <span className="text-sm font-medium">新建分类</span>
+            </div>
+          )}
           {renderTree(categories)}
         </div>
       )}
-
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(undefined) }} title={editing ? '编辑分类' : '新建分类'}>
-        <CategoryForm initial={editing} allCategories={categories} onSubmit={editing ? handleUpdate : handleCreate} onCancel={() => { setModalOpen(false); setEditing(undefined) }} />
-      </Modal>
     </motion.div>
   )
 }
