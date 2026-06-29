@@ -157,11 +157,11 @@ export default function BookmarkView({
           {onAdd && (
             <button
               onClick={onAdd}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors whitespace-nowrap"
-              title="新建书签"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs leading-none text-neon-400 hover:text-neon-300 hover:bg-white/5 transition-colors whitespace-nowrap"
+              title="新增书签"
             >
-              <FiPlus size={14} />
-              <span className="hidden sm:inline">新建</span>
+              <FiPlus size={16} />
+              <span className="hidden sm:inline">新增</span>
             </button>
           )}
         </div>
@@ -169,10 +169,11 @@ export default function BookmarkView({
         {onBatchToggle && (
           <button
             onClick={onBatchToggle}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors mr-1 ${batchMode ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs leading-none font-medium transition-colors mr-1 ${batchMode ? 'bg-amber-500/20 text-amber-400' : 'text-amber-400 hover:text-amber-300 hover:bg-white/5'}`}
             title={batchMode ? '退出批量编辑' : '批量编辑'}
           >
-            {batchMode ? '退出' : '批量编辑'}
+            <FiCheckSquare size={14} />
+            <span className="hidden sm:inline">{batchMode ? '退出' : '批量编辑'}</span>
           </button>
         )}
         {viewModeOptions.map(({ mode, icon: Icon, title }) => (

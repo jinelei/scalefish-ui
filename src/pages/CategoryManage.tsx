@@ -37,10 +37,10 @@ function TreeNode({ node, onEdit, onDelete, statsMap, depth = 0 }: {
         <span className="text-xs text-gray-500">{statsMap.get(node.id) ?? 0}</span>
         <span className="hidden sm:inline text-[10px] text-gray-600">{node.sortOrder ?? '-'}</span>
         <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-          <button onClick={() => onEdit(node)} className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
+          <button onClick={() => onEdit(node)} className="p-1.5 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
             <FiEdit2 size={14} />
           </button>
-          <button onClick={() => onDelete(node.id)} className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
+          <button onClick={() => onDelete(node.id)} className="p-1.5 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
             <FiTrash2 size={14} />
           </button>
         </div>
@@ -122,7 +122,7 @@ function CategoryForm({ initial, allCategories, onSubmit, onCancel }: CategoryFo
   )
 }
 
-export default function Categories() {
+export default function CategoryManage() {
   const [categories, setCategories] = useState<CategoryResponse[]>([])
   const [statsMap, setStatsMap] = useState<Map<number, number>>(new Map())
   const [loading, setLoading] = useState(true)
@@ -189,10 +189,10 @@ export default function Categories() {
         <div className="text-center py-16 text-gray-500">
           <div
             onClick={() => { setEditing(undefined); setModalOpen(true) }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-neon-500/40 cursor-pointer text-neon-400 hover:text-neon-300 transition-colors"
           >
             <FiPlus size={15} />
-            <span className="text-sm font-medium">新建分类</span>
+            <span className="text-sm font-medium">新增分类</span>
           </div>
           <p className="text-sm mt-4">暂无分类</p>
         </div>
@@ -200,7 +200,7 @@ export default function Categories() {
         <div className="glass rounded-xl p-4">
           <div className="p-3 rounded-lg bg-surface-800/50 border border-accent-500/20">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold text-accent-400">新建分类</span>
+              <span className="text-xs font-semibold text-accent-400">新增分类</span>
             </div>
             <CategoryForm initial={undefined} allCategories={[]} onSubmit={handleCreate} onCancel={() => { setModalOpen(false); setEditing(undefined) }} />
           </div>
@@ -210,7 +210,7 @@ export default function Categories() {
           {modalOpen && (
             <div className="p-3 rounded-lg bg-surface-800/50 border border-accent-500/20">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-semibold text-accent-400">{editing ? '编辑分类' : '新建分类'}</span>
+                <span className="text-xs font-semibold text-accent-400">{editing ? '编辑分类' : '新增分类'}</span>
               </div>
               <CategoryForm initial={editing} allCategories={categories} onSubmit={editing ? handleUpdate : handleCreate} onCancel={() => { setModalOpen(false); setEditing(undefined) }} />
             </div>
@@ -218,10 +218,10 @@ export default function Categories() {
           {!modalOpen && (
             <div
               onClick={() => { setEditing(undefined); setModalOpen(true) }}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors group"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-neon-500/40 cursor-pointer text-neon-400 hover:text-neon-300 transition-colors group"
             >
               <FiPlus size={15} />
-              <span className="text-sm font-medium">新建分类</span>
+              <span className="text-sm font-medium">新增分类</span>
             </div>
           )}
           {renderTree(categories)}

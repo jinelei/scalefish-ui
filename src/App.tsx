@@ -4,8 +4,8 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import Tokens from './pages/Tokens'
-import ChromeExt from './pages/ChromeExt'
+import ApiTokens from './pages/ApiTokens'
+import ExtensionGuide from './pages/ExtensionGuide'
 import Settings from './pages/Settings'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -22,9 +22,9 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/tokens" element={<Tokens />} />
+        <Route path="/tokens" element={<ApiTokens />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/chrome-ext" element={<ChromeExt />} />
+        <Route path="/chrome-ext" element={<ExtensionGuide />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

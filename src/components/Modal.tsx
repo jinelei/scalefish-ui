@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiX } from 'react-icons/fi'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface ModalProps {
   open: boolean
@@ -20,6 +21,8 @@ const sizeClasses: Record<string, string> = {
 
 export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const { resolved } = useTheme()
+  const isLight = resolved === 'light'
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -46,11 +49,15 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`relative w-full glass border border-surface-500/50 shadow-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-none sm:rounded-xl sm:mx-4 ${sizeClasses[size] || sizeClasses.md}`}
+            style={{ background: isLight ? '#ffffff' : '#15171f' }}
+            className={`relative w-full border border-surface-500/50 shadow-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-none sm:rounded-xl sm:mx-4 ${sizeClasses[size] || sizeClasses.md}`}
           >
-            <div className="sticky top-0 z-10 glass flex items-center justify-between px-5 py-4 border-b border-surface-500/30">
-              <h2 className="font-semibold text-sm">{title}</h2>
-              <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1">
+            <div
+              style={{ background: isLight ? '#e2e8f0' : '#1e2939' }}
+              className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-white/10 rounded-t-none sm:rounded-t-xl"
+            >
+              <h2 className={`font-semibold text-sm ${isLight ? 'text-gray-800' : 'text-white'}`}>{title}</h2>
+              <button onClick={onClose} className={`transition-colors p-1 ${isLight ? 'text-gray-500 hover:text-gray-700' : 'text-gray-400 hover:text-white'}`}>
                 <FiX size={20} />
               </button>
             </div>

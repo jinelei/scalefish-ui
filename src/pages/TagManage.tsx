@@ -10,7 +10,7 @@ const container = {
   show: { transition: { staggerChildren: 0.04 } },
 }
 
-export default function Tags() {
+export default function TagManage() {
   const [tags, setTags] = useState<TagResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -95,10 +95,10 @@ export default function Tags() {
         <div className="text-center py-16 text-gray-500">
           <div
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-white/10 hover:border-neon-500/40 cursor-pointer text-neon-400 hover:text-neon-300 transition-colors"
           >
             <FiPlus size={15} />
-            <span className="text-sm font-medium">新建标签</span>
+            <span className="text-sm font-medium">新增标签</span>
           </div>
           <p className="text-sm mt-4">暂无标签</p>
         </div>
@@ -107,10 +107,10 @@ export default function Tags() {
           {!showForm ? (
             <div
               onClick={() => setShowForm(true)}
-              className="glass rounded-lg px-3.5 py-2 flex items-center gap-2 border-2 border-dashed border-white/10 hover:border-accent-500/40 cursor-pointer text-gray-500 hover:text-accent-400 transition-colors"
+              className="glass rounded-lg px-3.5 py-2 flex items-center gap-2 border-2 border-dashed border-white/10 hover:border-neon-500/40 cursor-pointer text-neon-400 hover:text-neon-300 transition-colors"
             >
               <FiPlus size={14} />
-              <span className="text-sm font-medium">新建标签</span>
+              <span className="text-sm font-medium">新增标签</span>
             </div>
           ) : (
             <div className="glass rounded-lg px-3.5 py-2 flex items-center gap-2 border border-accent-500/40">
@@ -155,10 +155,10 @@ export default function Tags() {
               >
                 <FiTag size={13} className="text-accent-400 shrink-0" />
                 <span className="text-sm">{t.name}</span>
-                <button onClick={() => { setEditingTag(t); setEditTagName(t.name) }} className="text-gray-600 hover:text-sky-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                <button onClick={() => { setEditingTag(t); setEditTagName(t.name) }} className="text-accent-400 hover:text-accent-300 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                   <FiEdit2 size={13} />
                 </button>
-                <button onClick={() => handleDelete(t.id, t.name)} className="text-gray-600 hover:text-rose-400 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                <button onClick={() => handleDelete(t.id, t.name)} className="text-rose-400 hover:text-rose-300 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                   <FiTrash2 size={13} />
                 </button>
               </motion.div>

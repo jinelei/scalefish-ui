@@ -20,7 +20,7 @@ const steps = [
   { icon: FiShield, title: '完成', desc: '插件安装成功，浏览器工具栏会显示 scalefish 图标，点击即可使用' },
 ]
 
-export default function ChromeExt() {
+export default function ExtensionGuide() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="max-w-2xl lg:max-w-5xl mx-auto space-y-8">
       <motion.div variants={item} className="glass rounded-xl p-6 sm:p-8 text-center">

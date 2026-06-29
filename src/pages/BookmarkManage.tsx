@@ -115,8 +115,8 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel, onCategor
             <option value="">无分类</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-gray-400 hover:text-accent-400 hover:border-accent-500/50 transition-colors" title="新建分类">
-            <FiPlus size={16} />
+          <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 transition-colors" title="新增分类">
+            <FiPlus size={18} />
           </button>
         </div>
         {showNewCategory && (
@@ -136,8 +136,8 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel, onCategor
               {t.name}
             </button>
           ))}
-          <button type="button" onClick={() => { setShowNewTag(!showNewTag); setNewTagName('') }} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border border-dashed border-surface-500 text-gray-400 hover:text-accent-400 hover:border-accent-500/50 ${showNewTag ? 'border-accent-500/50 text-accent-400' : ''}`}>
-            <FiPlus size={14} className="inline" /> 新建
+          <button type="button" onClick={() => { setShowNewTag(!showNewTag); setNewTagName('') }} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs leading-none font-medium transition-all border border-dashed border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 ${showNewTag ? 'border-neon-500/50 text-neon-400' : ''}`}>
+            <FiPlus size={16} /> 新增
           </button>
         </div>
         {showNewTag && (
@@ -161,7 +161,7 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel, onCategor
   )
 }
 
-export default function Bookmarks() {
+export default function BookmarkManage() {
   const [bookmarks, setBookmarks] = useState<BookmarkResponse[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -366,7 +366,7 @@ export default function Bookmarks() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => handleClick(b.id)}
-              className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors"
+              className="p-1.5 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors"
               title="打开"
             >
               <FiExternalLink size={13} />
@@ -380,23 +380,23 @@ export default function Bookmarks() {
             </button>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEdit(b) }}
-              className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors"
+              className="p-1.5 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors"
               title="编辑"
             >
-              <FiEdit2 size={13} />
+              <FiEdit2 size={15} />
             </button>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(b.id) }}
-              className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors"
+              className="p-1.5 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors"
               title="删除"
             >
-              <FiTrash2 size={13} />
+              <FiTrash2 size={15} />
             </button>
           </>
         )}
       />
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(undefined) }} title={editing ? '编辑书签' : '新建书签'}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditing(undefined) }} title={editing ? '编辑书签' : '新增书签'}>
         <BookmarkForm
           initial={editing}
           categories={categories}

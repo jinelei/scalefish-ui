@@ -29,11 +29,13 @@ function flattenCategories(
   ])
 }
 
-function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
+function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel, onCategoryCreated, onTagCreated }: {
   categories: CategoryResponse[]
   allTags: TagResponse[]
   onSubmit: (data: BookmarkRequest) => Promise<void>
   onCancel: () => void
+  onCategoryCreated?: (cat: CategoryResponse) => void
+  onTagCreated?: (tag: TagResponse) => void
 }) {
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
@@ -42,8 +44,49 @@ function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   const [submitting, setSubmitting] = useState(false)
 
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
+  const [creatingTag, setCreatingTag] = useState(false)
+  const [showNewTag, setShowNewTag] = useState(false)
+
   const toggleTag = (id: number) => {
     setSelectedTagIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
+  }
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return
+    setCreatingCategory(true)
+    try {
+      const res = await createCategory({ name: newCategoryName.trim() })
+      setCategoryId(res.data.id)
+      setNewCategoryName('')
+      setShowNewCategory(false)
+      onCategoryCreated?.(res.data)
+      toast.success('分类已创建')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '创建分类失败')
+    } finally {
+      setCreatingCategory(false)
+    }
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    setCreatingTag(true)
+    try {
+      const res = await createTag({ name: newTagName.trim() })
+      setSelectedTagIds((prev) => [...prev, res.data.id])
+      setNewTagName('')
+      setShowNewTag(false)
+      onTagCreated?.(res.data)
+      toast.success('标签已创建')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '创建标签失败')
+    } finally {
+      setCreatingTag(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,10 +119,23 @@ function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
       </div>
       <div>
         <label className="text-xs text-gray-400 mb-1 block">分类</label>
-        <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
-          <option value="">无分类</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <div className="flex gap-2">
+          <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+            <option value="">无分类</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 transition-colors" title="新增分类">
+            <FiPlus size={18} />
+          </button>
+        </div>
+        {showNewCategory && (
+          <div className="flex gap-2 mt-2">
+            <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="分类名称" className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()} />
+            <button type="button" onClick={handleCreateCategory} disabled={creatingCategory || !newCategoryName.trim()} className="px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-medium transition-colors">
+              {creatingCategory ? '...' : '创建'}
+            </button>
+          </div>
+        )}
       </div>
       <div>
         <label className="text-xs text-gray-400 mb-1 block">标签</label>
@@ -89,7 +145,18 @@ function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
               {t.name}
             </button>
           ))}
+          <button type="button" onClick={() => { setShowNewTag(!showNewTag); setNewTagName('') }} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs leading-none font-medium transition-all border border-dashed border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 ${showNewTag ? 'border-accent-500/50 text-accent-400' : ''}`}>
+            <FiPlus size={16} /> 新增
+          </button>
         </div>
+        {showNewTag && (
+          <div className="flex gap-2 mt-2">
+            <input value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="标签名称" className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()} />
+            <button type="button" onClick={handleCreateTag} disabled={creatingTag || !newTagName.trim()} className="px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-medium transition-colors">
+              {creatingTag ? '...' : '创建'}
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={submitting} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
@@ -101,12 +168,14 @@ function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
   )
 }
 
-function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel }: {
+function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel, onCategoryCreated, onTagCreated }: {
   bookmark: BookmarkResponse
   categories: CategoryResponse[]
   allTags: TagResponse[]
   onSubmit: (data: BookmarkRequest) => Promise<void>
   onCancel: () => void
+  onCategoryCreated?: (cat: CategoryResponse) => void
+  onTagCreated?: (tag: TagResponse) => void
 }) {
   const [title, setTitle] = useState(bookmark.title)
   const [url, setUrl] = useState(bookmark.url)
@@ -115,8 +184,49 @@ function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel }:
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(bookmark.tags.map(t => t.id))
   const [submitting, setSubmitting] = useState(false)
 
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
+  const [creatingTag, setCreatingTag] = useState(false)
+  const [showNewTag, setShowNewTag] = useState(false)
+
   const toggleTag = (id: number) => {
     setSelectedTagIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
+  }
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return
+    setCreatingCategory(true)
+    try {
+      const res = await createCategory({ name: newCategoryName.trim() })
+      setCategoryId(res.data.id)
+      setNewCategoryName('')
+      setShowNewCategory(false)
+      onCategoryCreated?.(res.data)
+      toast.success('分类已创建')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '创建分类失败')
+    } finally {
+      setCreatingCategory(false)
+    }
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    setCreatingTag(true)
+    try {
+      const res = await createTag({ name: newTagName.trim() })
+      setSelectedTagIds((prev) => [...prev, res.data.id])
+      setNewTagName('')
+      setShowNewTag(false)
+      onTagCreated?.(res.data)
+      toast.success('标签已创建')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '创建标签失败')
+    } finally {
+      setCreatingTag(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,10 +259,23 @@ function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel }:
       </div>
       <div>
         <label className="text-xs text-gray-400 mb-1 block">分类</label>
-        <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
-          <option value="">无分类</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <div className="flex gap-2">
+          <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+            <option value="">无分类</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 transition-colors" title="新增分类">
+            <FiPlus size={18} />
+          </button>
+        </div>
+        {showNewCategory && (
+          <div className="flex gap-2 mt-2">
+            <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="分类名称" className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()} />
+            <button type="button" onClick={handleCreateCategory} disabled={creatingCategory || !newCategoryName.trim()} className="px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-medium transition-colors">
+              {creatingCategory ? '...' : '创建'}
+            </button>
+          </div>
+        )}
       </div>
       <div>
         <label className="text-xs text-gray-400 mb-1 block">标签</label>
@@ -162,7 +285,18 @@ function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel }:
               {t.name}
             </button>
           ))}
+          <button type="button" onClick={() => { setShowNewTag(!showNewTag); setNewTagName('') }} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs leading-none font-medium transition-all border border-dashed border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 ${showNewTag ? 'border-accent-500/50 text-accent-400' : ''}`}>
+            <FiPlus size={16} /> 新增
+          </button>
         </div>
+        {showNewTag && (
+          <div className="flex gap-2 mt-2">
+            <input value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="标签名称" className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()} />
+            <button type="button" onClick={handleCreateTag} disabled={creatingTag || !newTagName.trim()} className="px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-medium transition-colors">
+              {creatingTag ? '...' : '创建'}
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={submitting} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
@@ -507,22 +641,22 @@ export default function Dashboard() {
             onToggleSelect={toggleSelect}
             onBatchToggle={() => { if (batchMode) exitBatchMode(); else setBatchMode(true) }}
             prepend={batchMode ? (
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 py-2.5 mb-3 bg-accent-500/5 rounded-lg border border-accent-500/10">
-                <span className="text-xs text-accent-400 font-medium whitespace-nowrap">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 py-2.5 mb-3 bg-amber-500/5 rounded-lg border border-amber-500/10">
+                <span className="text-xs text-amber-400 font-medium whitespace-nowrap">
                   已选 {selectedIds.size} 项
                 </span>
                 <button onClick={selectedIds.size === recent.length ? deselectAll : selectAll} className="text-xs text-gray-400 hover:text-gray-200 transition-colors whitespace-nowrap">
                   {selectedIds.size === recent.length ? '取消全选' : '全选'}
                 </button>
                 <span className="w-px h-4 bg-white/10" />
-                <button onClick={() => { setBatchCategoryId(undefined); setBatchCategoryModalOpen(true) }} disabled={batchActionLoading} className="text-xs text-gray-400 hover:text-accent-400 disabled:opacity-50 transition-colors whitespace-nowrap">
-                  更改分类
+                <button onClick={() => { setBatchCategoryId(undefined); setBatchCategoryModalOpen(true) }} disabled={batchActionLoading} className="flex items-center gap-1 text-xs leading-none text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  <FiFolder size={15} /><span className="hidden sm:inline">更改分类</span>
                 </button>
-                <button onClick={() => { setBatchTagIds([]); setBatchAddTagModalOpen(true) }} disabled={batchActionLoading} className="text-xs text-gray-400 hover:text-accent-400 disabled:opacity-50 transition-colors whitespace-nowrap">
-                  追加标签
+                <button onClick={() => { setBatchTagIds([]); setBatchAddTagModalOpen(true) }} disabled={batchActionLoading} className="flex items-center gap-1 text-xs leading-none text-neon-400 hover:text-neon-300 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  <FiPlus size={15} /><span className="hidden sm:inline">追加标签</span>
                 </button>
-                <button onClick={() => { setBatchTagIds([]); setBatchRemoveTagModalOpen(true) }} disabled={batchActionLoading} className="text-xs text-gray-400 hover:text-rose-400 disabled:opacity-50 transition-colors whitespace-nowrap">
-                  删除标签
+                <button onClick={() => { setBatchTagIds([]); setBatchRemoveTagModalOpen(true) }} disabled={batchActionLoading} className="flex items-center gap-1 text-xs leading-none text-rose-400 hover:text-rose-300 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  <FiTrash2 size={15} /><span className="hidden sm:inline">删除标签</span>
                 </button>
               </div>
             ) : undefined}
@@ -532,7 +666,7 @@ export default function Dashboard() {
                   href={b.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors"
+                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors"
                   title="打开"
                 >
                   <FiExternalLink size={12} />
@@ -546,17 +680,17 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingBookmark(b) }}
-                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors"
+                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors"
                   title="编辑"
                 >
-                  <FiEdit2 size={12} />
+                  <FiEdit2 size={14} />
                 </button>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(b.id) }}
-                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors"
+                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors"
                   title="删除"
                 >
-                  <FiTrash2 size={12} />
+                  <FiTrash2 size={14} />
                 </button>
               </>
             )}
@@ -574,8 +708,8 @@ export default function Dashboard() {
                   <Icon size={14} className="text-white" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-lg font-bold leading-tight">{loading ? '...' : value}</div>
-                  <div className="text-[10px] text-gray-500 leading-tight truncate">{label}</div>
+                  <div className="text-xl font-bold leading-tight">{loading ? '...' : value}</div>
+                  <div className="text-xs text-gray-500 leading-tight truncate">{label}</div>
                 </div>
               </div>
             ))}
@@ -584,12 +718,12 @@ export default function Dashboard() {
           <motion.div variants={item} className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-1.5">
               <FiFolder size={14} className="text-purple-400" />
-              <span className="text-sm font-semibold text-gray-300">分类</span>
-              <button onClick={() => openCatForm('create')} className="flex items-center gap-0.5 text-[10px] text-purple-400/60 hover:text-purple-300 ml-auto transition-colors">
-                <FiPlus size={11} />新增
+              <span className="text-base font-semibold text-gray-300">分类</span>
+              <button onClick={() => openCatForm('create')} className="flex items-center gap-0.5 text-xs leading-none text-neon-400 hover:text-neon-300 ml-auto transition-colors">
+                <FiPlus size={15} /><span className="hidden sm:inline">新增</span>
               </button>
-              <button onClick={() => { setCatEditMode(v => !v); setTagEditMode(false) }} className={`flex items-center gap-0.5 text-[10px] transition-colors ${catEditMode ? 'text-accent-400' : 'text-purple-400/60 hover:text-purple-300'}`}>
-                {catEditMode ? <><FiCheck size={11} />完成</> : <><FiEdit2 size={11} />编辑</>}
+              <button onClick={() => { setCatEditMode(v => !v); setTagEditMode(false) }} className={`flex items-center gap-0.5 text-xs leading-none transition-colors ${catEditMode ? 'text-accent-400' : 'text-accent-400 hover:text-accent-300'}`}>
+                {catEditMode ? <><FiCheck size={15} /><span className="hidden sm:inline">完成</span></> : <><FiEdit2 size={15} /><span className="hidden sm:inline">编辑</span></>}
               </button>
               {selectedCategoryIds.length > 0 && (
                 <>
@@ -600,7 +734,7 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {flatCategories.length === 0 ? (
-                <span className="text-xs text-gray-600">暂无分类</span>
+                  <span className="text-sm text-gray-400">暂无分类</span>
               ) : (
                 flatCategories.map(c => {
                   const active = selectedCategoryIds.includes(c.id)
@@ -609,7 +743,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => catEditMode ? null : toggleCategory(c.id)}
                         onDoubleClick={() => catEditMode ? openCatForm('edit', categories.find(cat => cat.id === c.id)) : null}
-                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors max-w-full sm:max-w-[320px] ${
+                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-sm font-medium border transition-colors max-w-full sm:max-w-[320px] ${
                           active
                             ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                             : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
@@ -621,11 +755,11 @@ export default function Dashboard() {
                       </button>
                       {catEditMode && (
                         <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                          <button onClick={() => openCatForm('edit', categories.find(cat => cat.id === c.id))} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
-                            <FiEdit2 size={12} />
+                          <button onClick={() => openCatForm('edit', categories.find(cat => cat.id === c.id))} className="p-1 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
+                            <FiEdit2 size={14} />
                           </button>
-                          <button onClick={() => handleCatDelete(c.id, c.name)} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
-                            <FiTrash2 size={12} />
+                          <button onClick={() => handleCatDelete(c.id, c.name)} className="p-1 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
+                            <FiTrash2 size={14} />
                           </button>
                         </div>
                       )}
@@ -639,12 +773,12 @@ export default function Dashboard() {
           <motion.div variants={item} className="glass rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-1.5">
               <FiTag size={14} className="text-neon-400" />
-              <span className="text-sm font-semibold text-gray-300">标签</span>
-              <button onClick={() => openTagForm('create')} className="flex items-center gap-0.5 text-[10px] text-neon-400/60 hover:text-neon-300 ml-auto transition-colors">
-                <FiPlus size={11} />新增
+              <span className="text-base font-semibold text-gray-300">标签</span>
+              <button onClick={() => openTagForm('create')} className="flex items-center gap-0.5 text-xs leading-none text-neon-400 hover:text-neon-300 ml-auto transition-colors">
+                <FiPlus size={15} /><span className="hidden sm:inline">新增</span>
               </button>
-              <button onClick={() => { setTagEditMode(v => !v); setCatEditMode(false) }} className={`flex items-center gap-0.5 text-[10px] transition-colors ${tagEditMode ? 'text-accent-400' : 'text-neon-400/60 hover:text-neon-300'}`}>
-                {tagEditMode ? <><FiCheck size={11} />完成</> : <><FiEdit2 size={11} />编辑</>}
+              <button onClick={() => { setTagEditMode(v => !v); setCatEditMode(false) }} className={`flex items-center gap-0.5 text-xs leading-none transition-colors ${tagEditMode ? 'text-accent-400' : 'text-accent-400 hover:text-accent-300'}`}>
+                {tagEditMode ? <><FiCheck size={15} /><span className="hidden sm:inline">完成</span></> : <><FiEdit2 size={15} /><span className="hidden sm:inline">编辑</span></>}
               </button>
               {selectedTagIds.length > 0 && (
                 <>
@@ -659,7 +793,7 @@ export default function Dashboard() {
                 {selectedTagNames.map(t => (
                   <span
                     key={`sel-${t.id}`}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-500/20 text-neon-300 border border-neon-500/30"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-neon-500/20 text-neon-300 border border-neon-500/30"
                   >
                     # {t.name}
                     <FiX
@@ -675,7 +809,7 @@ export default function Dashboard() {
             <div className="flex flex-nowrap overflow-x-auto gap-1.5 sm:flex-wrap sm:overflow-visible sm:gap-2 pb-1">
               {otherTags.length === 0 && selectedTagNames.length === 0 ? (
                 allTags.length === 0 ? (
-                  <span className="text-xs text-gray-600">暂无标签</span>
+                  <span className="text-sm text-gray-400">暂无标签</span>
                 ) : (
                   tagStats.map(s => {
                     const active = selectedTagIds.includes(s.id)
@@ -683,7 +817,7 @@ export default function Dashboard() {
                       <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
                         <button
                           onClick={() => tagEditMode ? null : toggleTag(s.id)}
-                          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                             active
                               ? 'bg-neon-500/20 text-neon-300 border-neon-500/40'
                               : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
@@ -695,11 +829,11 @@ export default function Dashboard() {
                         </button>
                         {tagEditMode && (
                           <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
-                              <FiEdit2 size={12} />
+                            <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
+                              <FiEdit2 size={14} />
                             </button>
-                            <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
-                              <FiTrash2 size={12} />
+                            <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
+                              <FiTrash2 size={14} />
                             </button>
                           </div>
                         )}
@@ -712,7 +846,7 @@ export default function Dashboard() {
                   <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
                     <button
                       onClick={() => tagEditMode ? null : toggleTag(s.id)}
-                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                         tagEditMode ? 'cursor-default bg-white/5 text-gray-400 border-white/10' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 cursor-pointer'
                       }`}
                     >
@@ -721,11 +855,11 @@ export default function Dashboard() {
                     </button>
                     {tagEditMode && (
                       <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                        <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
-                          <FiEdit2 size={12} />
+                        <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
+                          <FiEdit2 size={14} />
                         </button>
-                        <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
-                          <FiTrash2 size={12} />
+                        <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
+                          <FiTrash2 size={14} />
                         </button>
                       </div>
                     )}
@@ -733,7 +867,7 @@ export default function Dashboard() {
                 ))
               )}
               {otherTags.length === 0 && selectedTagNames.length > 0 && (
-                <span className="text-xs text-gray-600">无其他标签</span>
+                <span className="text-sm text-gray-400">无其他标签</span>
               )}
             </div>
           </motion.div>
@@ -749,16 +883,20 @@ export default function Dashboard() {
             allTags={allTags}
             onSubmit={handleUpdate}
             onCancel={() => setEditingBookmark(null)}
+            onCategoryCreated={(cat) => setCategories(prev => [...prev, cat])}
+            onTagCreated={(tag) => setAllTags(prev => [...prev, tag])}
           />
         )}
       </Modal>
 
-      <Modal open={showCreateBookmark} onClose={() => setShowCreateBookmark(false)} title="新建书签">
+      <Modal open={showCreateBookmark} onClose={() => setShowCreateBookmark(false)} title="新增书签">
         <CreateBookmarkForm
           categories={categories}
           allTags={allTags}
           onSubmit={handleCreateBookmark}
           onCancel={() => setShowCreateBookmark(false)}
+          onCategoryCreated={(cat) => setCategories(prev => [...prev, cat])}
+          onTagCreated={(tag) => setAllTags(prev => [...prev, tag])}
         />
       </Modal>
 
@@ -822,7 +960,7 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      <Modal open={catFormMode !== null} onClose={() => { setCatFormMode(null); setEditingCategory(null) }} title={editingCategory ? '编辑分类' : '新建分类'}>
+      <Modal open={catFormMode !== null} onClose={() => { setCatFormMode(null); setEditingCategory(null) }} title={editingCategory ? '编辑分类' : '新增分类'}>
         <div className="space-y-4">
           <div>
             <label className="text-xs text-gray-400 mb-1 block">名称 *</label>
@@ -852,7 +990,7 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      <Modal open={tagFormMode !== null} onClose={() => { setTagFormMode(null); setEditingTag(null) }} title={editingTag ? '编辑标签' : '新建标签'}>
+      <Modal open={tagFormMode !== null} onClose={() => { setTagFormMode(null); setEditingTag(null) }} title={editingTag ? '编辑标签' : '新增标签'}>
         <div className="space-y-4">
           <div>
             <label className="text-xs text-gray-400 mb-1 block">名称 *</label>

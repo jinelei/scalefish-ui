@@ -201,14 +201,14 @@ function ExternalLinkSection() {
               <div className="flex items-center gap-1 shrink-0 ml-2">
                 <button
                   onClick={() => openEdit(link)}
-                  className="p-1.5 text-gray-500 hover:text-accent-400 hover:bg-white/5 rounded-lg transition-colors"
+                  className="p-1.5 text-accent-400 hover:text-accent-300 hover:bg-white/5 rounded-lg transition-colors"
                   title="编辑"
                 >
                   <FiEdit2 size={13} />
                 </button>
                 <button
                   onClick={() => handleDelete(link.id)}
-                  className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors"
+                  className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-white/5 rounded-lg transition-colors"
                   title="删除"
                 >
                   <FiTrash2 size={13} />
@@ -376,7 +376,7 @@ function TokenSection() {
               </div>
               <button
                 onClick={() => handleRevoke(t.id)}
-                className="shrink-0 p-1.5 text-gray-500 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors"
+                className="shrink-0 p-1.5 text-rose-400 hover:text-rose-300 hover:bg-white/5 rounded-lg transition-colors"
                 title="撤销"
               >
                 <FiTrash2 size={13} />

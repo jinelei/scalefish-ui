@@ -3,7 +3,7 @@ import { FiPlus, FiCopy, FiCheck, FiTrash2, FiKey } from 'react-icons/fi'
 import { listTokens, createToken, revokeToken } from '../api/tokens'
 import type { ApiTokenResponse } from '../types'
 
-export default function Tokens() {
+export default function ApiTokens() {
   const [tokens, setTokens] = useState<ApiTokenResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -165,7 +165,7 @@ export default function Tokens() {
               </div>
               <button
                 onClick={() => handleRevoke(t.id)}
-                className="shrink-0 p-2 text-gray-500 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors"
+                className="shrink-0 p-2 text-rose-400 hover:text-rose-300 hover:bg-white/5 rounded-lg transition-colors"
                 title="撤销"
               >
                 <FiTrash2 size={14} />
