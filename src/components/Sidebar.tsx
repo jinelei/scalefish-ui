@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { FiBookmark, FiLogOut, FiX, FiExternalLink, FiSettings, FiKey, FiMusic, FiCamera, FiCalendar, FiFolder, FiShield, FiLock, FiGlobe, FiCode } from 'react-icons/fi'
+import { FiBookmark, FiLogOut, FiX, FiExternalLink, FiSettings, FiMusic, FiCamera, FiCalendar, FiFolder, FiShield, FiLock, FiGlobe, FiCode } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { getExternalLinks } from '../api/external-links'
@@ -15,7 +15,6 @@ const DefaultIcon = FiExternalLink
 const links = [
   { to: '/', label: '书签', icon: FiBookmark },
   { to: '/settings', label: '设置', icon: FiSettings },
-  { to: '/tokens', label: 'Token', icon: FiKey },
 ]
 
 interface SidebarProps {
