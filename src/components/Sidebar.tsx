@@ -1,21 +1,21 @@
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { FiBookmark, FiLogOut, FiX, FiMusic, FiCamera, FiCalendar, FiFolder, FiShield, FiLock, FiGlobe, FiCode, FiExternalLink } from 'react-icons/fi'
+import { FiBookmark, FiLogOut, FiX, FiExternalLink, FiSettings, FiKey, FiMusic, FiCamera, FiCalendar, FiFolder, FiShield, FiLock, FiGlobe, FiCode } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
+import { getExternalLinks } from '../api/external-links'
+import type { ExternalLinkResponse } from '../types'
+
+const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+  FiMusic, FiCamera, FiCalendar, FiFolder, FiShield, FiLock, FiGlobe, FiCode, FiExternalLink,
+}
+
+const DefaultIcon = FiExternalLink
 
 const links = [
   { to: '/', label: '书签', icon: FiBookmark },
-]
-
-const externalLinks = [
-  { href: 'https://music.jinelei.com:9443/', label: '音乐', icon: FiMusic },
-  { href: 'https://photo.jinelei.com:9443/photos', label: '照片', icon: FiCamera },
-  { href: 'https://calendar.jinelei.com:9443/', label: '日历', icon: FiCalendar },
-  { href: 'https://file.jinelei.com:9443/files/', label: '文件', icon: FiFolder },
-  { href: 'https://clash.jinelei.com:9443/ui/#/overview', label: '代理', icon: FiShield },
-  { href: 'https://wire.jinelei.com:9443/#/', label: 'VPN', icon: FiLock },
-  { href: 'https://ddns.jinelei.com:9443/', label: 'DDNS', icon: FiGlobe },
-  { href: 'https://code.jinelei.com:9443/', label: '代码', icon: FiCode },
+  { to: '/settings', label: '设置', icon: FiSettings },
+  { to: '/tokens', label: 'Token', icon: FiKey },
 ]
 
 interface SidebarProps {
@@ -27,6 +27,11 @@ interface SidebarProps {
 export default function Sidebar({ open, onClose, displayName }: SidebarProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const [externalLinks, setExternalLinks] = useState<ExternalLinkResponse[]>([])
+
+  useEffect(() => {
+    getExternalLinks().then(res => setExternalLinks(res.data)).catch(() => {})
+  }, [])
   return (
     <AnimatePresence initial={false}>
       {open && (
@@ -82,19 +87,22 @@ export default function Sidebar({ open, onClose, displayName }: SidebarProps) {
               <div className="pt-3 pb-1 px-3">
                 <span className="text-[10px] text-gray-600 font-medium tracking-wider uppercase">外部链接</span>
               </div>
-              {externalLinks.map(({ href, label, icon: Icon }) => (
-                <a
-                  key={href}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-200 hover:bg-white/5 transition-all duration-200"
-                >
-                  <Icon size={15} />
-                  <span className="flex-1">{label}</span>
-                  <FiExternalLink size={11} className="text-gray-600" />
-                </a>
-              ))}
+              {externalLinks.map((link) => {
+                const Icon = (link.icon && iconMap[link.icon]) || DefaultIcon
+                return (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-200 hover:bg-white/5 transition-all duration-200"
+                  >
+                    <Icon size={15} />
+                    <span className="flex-1">{link.name}</span>
+                    <FiExternalLink size={11} className="text-gray-600" />
+                  </a>
+                )
+              })}
             </nav>
 
             <div className="px-4 py-4 border-t border-white/5 space-y-2">

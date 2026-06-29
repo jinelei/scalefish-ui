@@ -128,3 +128,18 @@ export interface ApiTokenResponse {
   createdAt: string;
 }
 
+export interface ExternalLinkRequest {
+  name: string;
+  url: string;
+  icon?: string;
+  sortOrder?: number;
+}
+
+export interface ExternalLinkResponse {
+  id: number;
+  name: string;
+  url: string;
+  icon: string | null;
+  sortOrder: number | null;
+}
+
