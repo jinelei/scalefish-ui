@@ -1,5 +1,6 @@
 import client from './client';
 import type {
+  BatchBookmarkRequest,
   BookmarkRequest,
   BookmarkResponse,
   BookmarkSearchParams,
@@ -51,5 +52,12 @@ export async function recordClick(
   id: number,
 ): Promise<GenericResult<BookmarkResponse>> {
   const res = await client.post(`/bookmarks/${id}/click`);
+  return res.data;
+}
+
+export async function batchUpdateBookmarks(
+  req: BatchBookmarkRequest,
+): Promise<GenericResult<void>> {
+  const res = await client.patch('/bookmarks/batch', req);
   return res.data;
 }

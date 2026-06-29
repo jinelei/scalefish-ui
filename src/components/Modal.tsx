@@ -7,9 +7,18 @@ interface ModalProps {
   onClose: () => void
   title: string
   children: React.ReactNode
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
 }
 
-export default function Modal({ open, onClose, title, children }: ModalProps) {
+const sizeClasses: Record<string, string> = {
+  sm: 'sm:max-w-sm',
+  md: 'sm:max-w-lg',
+  lg: 'sm:max-w-2xl',
+  xl: 'sm:max-w-4xl',
+  full: 'sm:max-w-[95vw] sm:max-h-[95vh] sm:h-[95vh]',
+}
+
+export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -37,7 +46,7 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative w-full glass border border-surface-500/50 shadow-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-none sm:rounded-xl sm:mx-4 sm:max-w-lg"
+            className={`relative w-full glass border border-surface-500/50 shadow-2xl max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto rounded-none sm:rounded-xl sm:mx-4 ${sizeClasses[size] || sizeClasses.md}`}
           >
             <div className="sticky top-0 z-10 glass flex items-center justify-between px-5 py-4 border-b border-surface-500/30">
               <h2 className="font-semibold text-sm">{title}</h2>

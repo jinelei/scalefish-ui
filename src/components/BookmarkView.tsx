@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   FiGrid, FiList, FiPaperclip, FiMousePointer,
   FiBookmark, FiColumns, FiPlus,
-  FiAlignJustify, FiLayout,
+  FiAlignJustify, FiLayout, FiCheckSquare, FiSquare,
 } from 'react-icons/fi'
 import { recordClick } from '../api/bookmarks'
 import type { BookmarkResponse } from '../types'
@@ -29,6 +29,10 @@ interface BookmarkViewProps {
   onAdd?: () => void
   totalElements?: number
   title?: string
+  batchMode?: boolean
+  selectedIds?: Set<number>
+  onToggleSelect?: (id: number) => void
+  onBatchToggle?: () => void
 }
 
 const containerAnim = {
@@ -84,6 +88,10 @@ export default function BookmarkView({
   onAdd,
   totalElements,
   title,
+  batchMode,
+  selectedIds,
+  onToggleSelect,
+  onBatchToggle,
 }: BookmarkViewProps) {
   const initialRender = useRef(true)
   const [gridCols, setGridCols] = useState<number>(() => {
@@ -158,6 +166,15 @@ export default function BookmarkView({
           )}
         </div>
         <div className="flex items-center gap-1">
+        {onBatchToggle && (
+          <button
+            onClick={onBatchToggle}
+            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors mr-1 ${batchMode ? 'bg-accent-500/20 text-accent-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+            title={batchMode ? '退出批量编辑' : '批量编辑'}
+          >
+            {batchMode ? '退出' : '批量编辑'}
+          </button>
+        )}
         {viewModeOptions.map(({ mode, icon: Icon, title }) => (
           <button
             key={mode}
@@ -174,7 +191,7 @@ export default function BookmarkView({
         ))}
 
         {viewMode === 'grid' && (
-          <div className="relative" ref={colsMenuRef}>
+          <div className="hidden sm:block relative" ref={colsMenuRef}>
             <button
               onClick={() => setShowColsMenu(v => !v)}
               className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors ml-1"
@@ -272,6 +289,9 @@ export default function BookmarkView({
                     onPin={onPin}
                     onClick={handleClick}
                     renderActions={renderActions}
+                    batchMode={batchMode}
+                    selected={selectedIds?.has(b.id)}
+                    onToggleSelect={onToggleSelect}
                   />
                 </motion.div>
               ))}
@@ -293,6 +313,9 @@ export default function BookmarkView({
                     onPin={onPin}
                     onClick={handleClick}
                     renderActions={renderActions}
+                    batchMode={batchMode}
+                    selected={selectedIds?.has(b.id)}
+                    onToggleSelect={onToggleSelect}
                   />
                 </motion.div>
               ))}
@@ -314,6 +337,9 @@ export default function BookmarkView({
                     onPin={onPin}
                     onClick={handleClick}
                     renderActions={renderActions}
+                    batchMode={batchMode}
+                    selected={selectedIds?.has(b.id)}
+                    onToggleSelect={onToggleSelect}
                   />
                 </motion.div>
               ))}
@@ -397,16 +423,28 @@ function GridCard({
   onPin,
   onClick,
   renderActions,
+  batchMode,
+  selected,
+  onToggleSelect,
 }: {
   bookmark: BookmarkResponse
   onPin: (id: number) => void
   onClick: (id: number) => void
   renderActions?: (b: BookmarkResponse) => ReactNode
+  batchMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: number) => void
 }) {
   return (
-    <div className="glass rounded-xl p-4 glass-hover transition-all group">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+    <div className={`glass rounded-xl p-4 glass-hover transition-all group ${batchMode ? 'cursor-pointer' : ''} ${selected ? 'ring-2 ring-accent-500/50' : ''}`} onClick={() => batchMode && onToggleSelect?.(b.id)}>
+      <div className="flex items-start gap-3">
+        {batchMode && (
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(b.id) }} className="mt-0.5 shrink-0 text-gray-500 hover:text-accent-400 transition-colors">
+            {selected ? <FiCheckSquare size={18} className="text-accent-400" /> : <FiSquare size={18} />}
+          </button>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
           <a
             href={b.url}
             target="_blank"
@@ -438,6 +476,7 @@ function GridCard({
           )}
         </div>
       </div>
+      </div>
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
         <span className="flex items-center gap-1 text-xs text-gray-500">
           <FiMousePointer size={11} /> {b.clickCount}
@@ -467,55 +506,68 @@ function ListCard({
   onPin,
   onClick,
   renderActions,
+  batchMode,
+  selected,
+  onToggleSelect,
 }: {
   bookmark: BookmarkResponse
   onPin: (id: number) => void
   onClick: (id: number) => void
   renderActions?: (b: BookmarkResponse) => ReactNode
+  batchMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: number) => void
 }) {
   return (
-    <div className="flex items-start gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors group min-w-0">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <a
-            href={b.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => onClick(b.id)}
-            className="text-sm truncate hover:text-accent-400 transition-colors"
-          >
-            {b.title}
-          </a>
-          {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
-        </div>
-        <div className="text-xs text-gray-600 truncate">{b.url}</div>
-        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-          {b.category && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 leading-none">
-              {b.category.name}
+    <div className={`flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-colors group min-w-0 ${selected ? 'bg-accent-500/5' : ''}`} onClick={() => batchMode && onToggleSelect?.(b.id)}>
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        {batchMode && (
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(b.id) }} className="mt-0.5 shrink-0 text-gray-500 hover:text-accent-400 transition-colors">
+            {selected ? <FiCheckSquare size={18} className="text-accent-400" /> : <FiSquare size={18} />}
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <a
+              href={b.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => onClick(b.id)}
+              className="text-sm truncate hover:text-accent-400 transition-colors"
+            >
+              {b.title}
+            </a>
+            {b.pinned && <FiPaperclip size={11} className="text-rose-400 shrink-0" />}
+          </div>
+          <div className="text-xs text-gray-600 truncate">{b.url}</div>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            {b.category && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 leading-none">
+                {b.category.name}
+              </span>
+            )}
+            {b.tags.slice(0, 4).map(t => (
+              <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-neon-500/10 text-neon-400 border border-neon-500/20 leading-none">
+                # {t.name}
+              </span>
+            ))}
+            {b.tags.length > 4 && (
+              <span className="text-[10px] text-gray-500">+{b.tags.length - 4}</span>
+            )}
+            <span className="flex items-center gap-1 text-xs text-gray-500 ml-0.5">
+              <FiMousePointer size={11} /> {b.clickCount}
             </span>
-          )}
-          {b.tags.slice(0, 3).map(t => (
-            <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded-full bg-neon-500/10 text-neon-400 border border-neon-500/20 leading-none">
-              # {t.name}
-            </span>
-          ))}
-          {b.tags.length > 3 && (
-            <span className="text-[10px] text-gray-500">+{b.tags.length - 3}</span>
-          )}
-          <span className="flex items-center gap-1 text-xs text-gray-500 ml-0.5">
-            <FiMousePointer size={11} /> {b.clickCount}
-          </span>
+          </div>
         </div>
       </div>
       {renderActions ? (
-        <div className="flex items-center gap-1 shrink-0 mt-0.5">
+        <div className="flex items-center gap-1 sm:shrink-0 sm:mt-0.5 ml-auto sm:ml-0">
           {renderActions(b)}
         </div>
       ) : (
         <button
           onClick={e => { e.preventDefault(); e.stopPropagation(); onPin(b.id) }}
-          className={`p-1.5 rounded hover:bg-white/10 transition-colors shrink-0 mt-0.5 ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
+          className={`p-1.5 rounded hover:bg-white/10 transition-colors shrink-0 sm:mt-0.5 ml-auto sm:ml-0 ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
           title={b.pinned ? '取消置顶' : '置顶'}
         >
           <FiPaperclip size={13} />
@@ -532,14 +584,25 @@ function CompactCard({
   onPin,
   onClick,
   renderActions,
+  batchMode,
+  selected,
+  onToggleSelect,
 }: {
   bookmark: BookmarkResponse
   onPin: (id: number) => void
   onClick: (id: number) => void
   renderActions?: (b: BookmarkResponse) => ReactNode
+  batchMode?: boolean
+  selected?: boolean
+  onToggleSelect?: (id: number) => void
 }) {
   return (
-    <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/5 transition-colors group min-w-0">
+    <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/5 transition-colors group min-w-0 ${selected ? 'bg-accent-500/5' : ''}`} onClick={() => batchMode && onToggleSelect?.(b.id)}>
+      {batchMode && (
+        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(b.id) }} className="shrink-0 text-gray-500 hover:text-accent-400 transition-colors">
+          {selected ? <FiCheckSquare size={16} className="text-accent-400" /> : <FiSquare size={16} />}
+        </button>
+      )}
       <a
         href={b.url}
         target="_blank"

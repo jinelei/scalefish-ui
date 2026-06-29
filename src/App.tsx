@@ -4,9 +4,6 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import Bookmarks from './pages/Bookmarks'
-import Categories from './pages/Categories'
-import Tags from './pages/Tags'
 import Tokens from './pages/Tokens'
 import ChromeExt from './pages/ChromeExt'
 import Settings from './pages/Settings'
@@ -25,9 +22,6 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/bookmarks" element={<Bookmarks />} />
-        <Route path="/categories" element={<Categories />} />
-        <Route path="/tags" element={<Tags />} />
         <Route path="/tokens" element={<Tokens />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/chrome-ext" element={<ChromeExt />} />

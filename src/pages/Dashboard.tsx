@@ -1,11 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiExternalLink, FiPaperclip, FiEdit2, FiTrash2 } from 'react-icons/fi'
 import { motion } from 'framer-motion'
-import { searchBookmarks, togglePin } from '../api/bookmarks'
+import toast from 'react-hot-toast'
+import { searchBookmarks, togglePin, updateBookmark, deleteBookmark, batchUpdateBookmarks } from '../api/bookmarks'
 import { getCategoryTree, getCategoryStats } from '../api/categories'
 import { getAllTags, getTagStats } from '../api/tags'
-import type { BookmarkResponse, CategoryResponse, TagStatsResponse, TagResponse } from '../types'
+import type { BookmarkResponse, CategoryResponse, TagStatsResponse, TagResponse, BookmarkRequest } from '../types'
 import BookmarkView, { type ViewMode } from '../components/BookmarkView'
+import Modal from '../components/Modal'
+import Categories from './Categories'
+import Tags from './Tags'
 
 const container = {
   hidden: {},
@@ -25,6 +29,79 @@ function flattenCategories(
     { id: c.id, name: c.name, label: parentPath.length > 0 ? `${parentPath.join(' › ')} › ${c.name}` : c.name },
     ...flattenCategories(c.children, [...parentPath, c.name]),
   ])
+}
+
+function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel }: {
+  bookmark: BookmarkResponse
+  categories: CategoryResponse[]
+  allTags: TagResponse[]
+  onSubmit: (data: BookmarkRequest) => Promise<void>
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(bookmark.title)
+  const [url, setUrl] = useState(bookmark.url)
+  const [description, setDescription] = useState(bookmark.description || '')
+  const [categoryId, setCategoryId] = useState<number | undefined>(bookmark.category?.id)
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(bookmark.tags.map(t => t.id))
+  const [submitting, setSubmitting] = useState(false)
+
+  const toggleTag = (id: number) => {
+    setSelectedTagIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim() || !url.trim()) {
+      toast.error('标题和 URL 不能为空')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await onSubmit({ title: title.trim(), url: url.trim(), description: description.trim() || undefined, categoryId, tagIds: selectedTagIds.length ? selectedTagIds : undefined })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">标题 *</label>
+        <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">URL *</label>
+        <input value={url} onChange={e => setUrl(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">描述</label>
+        <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors resize-none h-20" />
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">分类</label>
+        <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+          <option value="">无分类</option>
+          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">标签</label>
+        <div className="flex flex-wrap gap-1.5">
+          {allTags.map(t => (
+            <button key={t.id} type="button" onClick={() => toggleTag(t.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${selectedTagIds.includes(t.id) ? 'bg-accent-500/20 text-accent-400 border border-accent-500/30' : 'bg-surface-800 text-gray-400 border border-surface-500 hover:border-surface-400'}`}>
+              {t.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-3 pt-2">
+        <button type="submit" disabled={submitting} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+          {submitting ? '保存中...' : '保存'}
+        </button>
+        <button type="button" onClick={onCancel} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+      </div>
+    </form>
+  )
 }
 
 export default function Dashboard() {
@@ -49,6 +126,18 @@ export default function Dashboard() {
   })
   const pageSizeRef = useRef(pageSize)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [batchMode, setBatchMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [batchCategoryModalOpen, setBatchCategoryModalOpen] = useState(false)
+  const [batchAddTagModalOpen, setBatchAddTagModalOpen] = useState(false)
+  const [batchRemoveTagModalOpen, setBatchRemoveTagModalOpen] = useState(false)
+  const [batchCategoryId, setBatchCategoryId] = useState<number | undefined>()
+  const [batchTagIds, setBatchTagIds] = useState<number[]>([])
+  const [batchActionLoading, setBatchActionLoading] = useState(false)
+
+  const [categoriesModalOpen, setCategoriesModalOpen] = useState(false)
+  const [tagsModalOpen, setTagsModalOpen] = useState(false)
+  const [editingBookmark, setEditingBookmark] = useState<BookmarkResponse | null>(null)
 
   const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string, pg: number) => {
     setLoading(true)
@@ -118,7 +207,76 @@ export default function Dashboard() {
     doFetch(selectedCategoryIds, selectedTagIds, keyword, 0)
   }
 
-  const hasFilter = selectedCategoryIds.length > 0 || selectedTagIds.length > 0
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAll = () => {
+    setSelectedIds(new Set(recent.map(b => b.id)))
+  }
+
+  const deselectAll = () => {
+    setSelectedIds(new Set())
+  }
+
+  const exitBatchMode = () => {
+    setBatchMode(false)
+    setSelectedIds(new Set())
+  }
+
+  const handleBatchAction = async (action: (ids: number[]) => Promise<void>) => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) { toast.error('请先选择书签'); return }
+    setBatchActionLoading(true)
+    try {
+      await action(ids)
+      toast.success('批量操作完成')
+      exitBatchMode()
+      doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '批量操作失败')
+    } finally {
+      setBatchActionLoading(false)
+    }
+  }
+
+  const handleBatchCategory = () => {
+    handleBatchAction(async (ids) => {
+      await batchUpdateBookmarks({ ids, categoryId: batchCategoryId ?? null })
+    })
+  }
+
+  const handleBatchAddTags = () => {
+    handleBatchAction(async (ids) => {
+      await batchUpdateBookmarks({ ids, addTagIds: batchTagIds })
+    })
+  }
+
+  const handleBatchRemoveTags = () => {
+    handleBatchAction(async (ids) => {
+      await batchUpdateBookmarks({ ids, removeTagIds: batchTagIds })
+    })
+  }
+
+  const handleUpdate = async (data: BookmarkRequest) => {
+    if (!editingBookmark) return
+    await updateBookmark(editingBookmark.id, data)
+    toast.success('书签已更新')
+    setEditingBookmark(null)
+    doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('确认删除此书签？')) return
+    await deleteBookmark(id)
+    toast.success('已删除')
+    doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+  }
 
   const selectedTagNames = allTags.filter(t => selectedTagIds.includes(t.id))
   const otherTags = tagStats.filter(s => !selectedTagIds.includes(s.id) && s.count > 0)
@@ -131,6 +289,7 @@ export default function Dashboard() {
   ]
 
   return (
+    <>
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={item} className="relative">
         <div className="relative w-full">
@@ -159,10 +318,10 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+      <div className="flex flex-col-reverse lg:grid lg:grid-cols-[1fr_360px] gap-6">
         <motion.div variants={item} className="min-w-0 glass rounded-xl p-5">
           <BookmarkView
-            title={keyword || hasFilter ? '筛选结果' : '最新书签'}
+            title="书签列表"
             bookmarks={recent}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -175,6 +334,64 @@ export default function Dashboard() {
             pageSize={pageSize}
             onPageSizeChange={handlePageSizeChange}
             totalElements={totalElements}
+            batchMode={batchMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onBatchToggle={() => { if (batchMode) exitBatchMode(); else setBatchMode(true) }}
+            prepend={batchMode ? (
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 py-2.5 mb-3 bg-accent-500/5 rounded-lg border border-accent-500/10">
+                <span className="text-xs text-accent-400 font-medium whitespace-nowrap">
+                  已选 {selectedIds.size} 项
+                </span>
+                <button onClick={selectedIds.size === recent.length ? deselectAll : selectAll} className="text-xs text-gray-400 hover:text-gray-200 transition-colors whitespace-nowrap">
+                  {selectedIds.size === recent.length ? '取消全选' : '全选'}
+                </button>
+                <span className="w-px h-4 bg-white/10" />
+                <button onClick={() => { setBatchCategoryId(undefined); setBatchCategoryModalOpen(true) }} disabled={batchActionLoading} className="text-xs text-gray-400 hover:text-accent-400 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  更改分类
+                </button>
+                <button onClick={() => { setBatchTagIds([]); setBatchAddTagModalOpen(true) }} disabled={batchActionLoading} className="text-xs text-gray-400 hover:text-accent-400 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  追加标签
+                </button>
+                <button onClick={() => { setBatchTagIds([]); setBatchRemoveTagModalOpen(true) }} disabled={batchActionLoading} className="text-xs text-gray-400 hover:text-rose-400 disabled:opacity-50 transition-colors whitespace-nowrap">
+                  删除标签
+                </button>
+              </div>
+            ) : undefined}
+            renderActions={(b) => (
+              <>
+                <a
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors"
+                  title="打开"
+                >
+                  <FiExternalLink size={12} />
+                </a>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePin(b.id) }}
+                  className={`p-1 sm:p-1.5 rounded hover:bg-white/10 transition-colors ${b.pinned ? 'text-rose-400' : 'text-gray-500 hover:text-rose-400'}`}
+                  title={b.pinned ? '取消置顶' : '置顶'}
+                >
+                  <FiPaperclip size={12} />
+                </button>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingBookmark(b) }}
+                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors"
+                  title="编辑"
+                >
+                  <FiEdit2 size={12} />
+                </button>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(b.id) }}
+                  className="p-1 sm:p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors"
+                  title="删除"
+                >
+                  <FiTrash2 size={12} />
+                </button>
+              </>
+            )}
           />
         </motion.div>
 
@@ -200,6 +417,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <FiFolder size={14} className="text-purple-400" />
               <span className="text-sm font-semibold text-gray-300">分类</span>
+              <button onClick={() => setCategoriesModalOpen(true)} className="text-[10px] text-purple-400/60 hover:text-purple-300 ml-1 transition-colors">管理</button>
               {selectedCategoryIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-purple-400 ml-1">({selectedCategoryIds.length})</span>
@@ -237,6 +455,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <FiTag size={14} className="text-neon-400" />
               <span className="text-sm font-semibold text-gray-300">标签</span>
+              <button onClick={() => setTagsModalOpen(true)} className="text-[10px] text-neon-400/60 hover:text-neon-300 ml-1 transition-colors">管理</button>
               {selectedTagIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-neon-400 ml-1">({selectedTagIds.length})</span>
@@ -263,7 +482,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <div className="flex flex-nowrap overflow-x-auto gap-1.5 sm:flex-wrap sm:overflow-visible sm:gap-2 pb-1">
               {otherTags.length === 0 && selectedTagNames.length === 0 ? (
                 allTags.length === 0 ? (
                   <span className="text-xs text-gray-600">暂无标签</span>
@@ -307,5 +526,85 @@ export default function Dashboard() {
         </div>
       </div>
     </motion.div>
+
+      <Modal open={!!editingBookmark} onClose={() => setEditingBookmark(null)} title="编辑书签">
+        {editingBookmark && (
+          <EditBookmarkForm
+            bookmark={editingBookmark}
+            categories={categories}
+            allTags={allTags}
+            onSubmit={handleUpdate}
+            onCancel={() => setEditingBookmark(null)}
+          />
+        )}
+      </Modal>
+
+      <Modal open={batchCategoryModalOpen} onClose={() => setBatchCategoryModalOpen(false)} title="批量更改分类">
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">选择目标分类</label>
+            <select value={batchCategoryId ?? ''} onChange={e => setBatchCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+              <option value="">无分类</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleBatchCategory} disabled={batchActionLoading} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {batchActionLoading ? '处理中...' : `更新 ${selectedIds.size} 个书签`}
+            </button>
+            <button onClick={() => setBatchCategoryModalOpen(false)} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={batchAddTagModalOpen} onClose={() => setBatchAddTagModalOpen(false)} title="批量追加标签">
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">选择要追加的标签</label>
+            <div className="flex flex-wrap gap-1.5">
+              {allTags.map(t => (
+                <button key={t.id} type="button" onClick={() => setBatchTagIds(prev => prev.includes(t.id) ? prev.filter(v => v !== t.id) : [...prev, t.id])} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${batchTagIds.includes(t.id) ? 'bg-accent-500/20 text-accent-400 border border-accent-500/30' : 'bg-surface-800 text-gray-400 border border-surface-500 hover:border-surface-400'}`}>
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleBatchAddTags} disabled={batchActionLoading || batchTagIds.length === 0} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {batchActionLoading ? '处理中...' : `追加到 ${selectedIds.size} 个书签`}
+            </button>
+            <button onClick={() => setBatchAddTagModalOpen(false)} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={batchRemoveTagModalOpen} onClose={() => setBatchRemoveTagModalOpen(false)} title="批量删除标签">
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">选择要删除的标签</label>
+            <div className="flex flex-wrap gap-1.5">
+              {allTags.map(t => (
+                <button key={t.id} type="button" onClick={() => setBatchTagIds(prev => prev.includes(t.id) ? prev.filter(v => v !== t.id) : [...prev, t.id])} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${batchTagIds.includes(t.id) ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-surface-800 text-gray-400 border border-surface-500 hover:border-surface-400'}`}>
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleBatchRemoveTags} disabled={batchActionLoading || batchTagIds.length === 0} className="flex-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {batchActionLoading ? '处理中...' : `从 ${selectedIds.size} 个书签删除`}
+            </button>
+            <button onClick={() => setBatchRemoveTagModalOpen(false)} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={categoriesModalOpen} onClose={() => setCategoriesModalOpen(false)} title="管理分类" size="xl">
+        <Categories />
+      </Modal>
+      <Modal open={tagsModalOpen} onClose={() => setTagsModalOpen(false)} title="管理标签" size="lg">
+        <Tags />
+      </Modal>
+    </>
   )
 }

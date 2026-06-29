@@ -11,6 +11,13 @@ export interface PageResponse<T> {
   currentPage: number;
 }
 
+export interface BatchBookmarkRequest {
+  ids: number[];
+  categoryId?: number | null;
+  addTagIds?: number[];
+  removeTagIds?: number[];
+}
+
 export interface BookmarkRequest {
   title: string;
   url: string;
