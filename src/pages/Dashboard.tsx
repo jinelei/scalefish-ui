@@ -1,15 +1,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiExternalLink, FiPaperclip, FiEdit2, FiTrash2 } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiExternalLink, FiPaperclip, FiEdit2, FiTrash2, FiPlus, FiSave } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { searchBookmarks, togglePin, updateBookmark, deleteBookmark, batchUpdateBookmarks } from '../api/bookmarks'
-import { getCategoryTree, getCategoryStats } from '../api/categories'
-import { getAllTags, getTagStats } from '../api/tags'
-import type { BookmarkResponse, CategoryResponse, TagStatsResponse, TagResponse, BookmarkRequest } from '../types'
+import { getCategoryTree, getCategoryStats, createCategory, updateCategory, deleteCategory } from '../api/categories'
+import { getAllTags, getTagStats, createTag, updateTag, deleteTag } from '../api/tags'
+import type { BookmarkResponse, CategoryResponse, TagStatsResponse, TagResponse, BookmarkRequest, CategoryRequest } from '../types'
 import BookmarkView, { type ViewMode } from '../components/BookmarkView'
 import Modal from '../components/Modal'
-import Categories from './Categories'
-import Tags from './Tags'
 
 const container = {
   hidden: {},
@@ -135,8 +133,18 @@ export default function Dashboard() {
   const [batchTagIds, setBatchTagIds] = useState<number[]>([])
   const [batchActionLoading, setBatchActionLoading] = useState(false)
 
-  const [categoriesModalOpen, setCategoriesModalOpen] = useState(false)
-  const [tagsModalOpen, setTagsModalOpen] = useState(false)
+  const [catEditMode, setCatEditMode] = useState(false)
+  const [tagEditMode, setTagEditMode] = useState(false)
+  const [catFormMode, setCatFormMode] = useState<'create' | 'edit' | null>(null)
+  const [tagFormMode, setTagFormMode] = useState<'create' | 'edit' | null>(null)
+  const [editingCategory, setEditingCategory] = useState<CategoryResponse | null>(null)
+  const [editingTag, setEditingTag] = useState<TagResponse | null>(null)
+  const [catFormName, setCatFormName] = useState('')
+  const [catFormParentId, setCatFormParentId] = useState<number | undefined>()
+  const [catFormSort, setCatFormSort] = useState('')
+  const [catFormSubmitting, setCatFormSubmitting] = useState(false)
+  const [tagFormName, setTagFormName] = useState('')
+  const [tagFormSubmitting, setTagFormSubmitting] = useState(false)
   const [editingBookmark, setEditingBookmark] = useState<BookmarkResponse | null>(null)
 
   const doFetch = useCallback((catIds: number[], tagIds: number[], kw: string, pg: number) => {
@@ -278,6 +286,85 @@ export default function Dashboard() {
     doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
   }
 
+  const openCatForm = (mode: 'create' | 'edit', cat?: CategoryResponse) => {
+    setEditingCategory(cat || null)
+    setCatFormName(cat?.name || '')
+    setCatFormParentId(cat ? undefined : undefined)
+    setCatFormSort(cat?.sortOrder?.toString() || '')
+    setCatFormMode(mode)
+  }
+
+  const handleCatSubmit = async () => {
+    if (!catFormName.trim()) { toast.error('名称不能为空'); return }
+    setCatFormSubmitting(true)
+    try {
+      const data: CategoryRequest = { name: catFormName.trim(), sortOrder: catFormSort ? Number(catFormSort) : undefined }
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, { ...data, parentId: catFormParentId })
+        toast.success('分类已更新')
+      } else {
+        await createCategory({ ...data, parentId: catFormParentId })
+        toast.success('分类已创建')
+      }
+      setCatFormMode(null)
+      setEditingCategory(null)
+      doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '操作失败')
+    } finally {
+      setCatFormSubmitting(false)
+    }
+  }
+
+  const handleCatDelete = async (id: number, name: string) => {
+    if (!confirm(`确认删除分类「${name}」？`)) return
+    try {
+      await deleteCategory(id)
+      toast.success('已删除')
+      doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '删除失败')
+    }
+  }
+
+  const openTagForm = (mode: 'create' | 'edit', tag?: TagResponse) => {
+    setEditingTag(tag || null)
+    setTagFormName(tag?.name || '')
+    setTagFormMode(mode)
+  }
+
+  const handleTagSubmit = async () => {
+    if (!tagFormName.trim()) { toast.error('名称不能为空'); return }
+    setTagFormSubmitting(true)
+    try {
+      if (editingTag) {
+        await updateTag(editingTag.id, { name: tagFormName.trim() })
+        toast.success('标签已更新')
+      } else {
+        await createTag({ name: tagFormName.trim() })
+        toast.success('标签已创建')
+      }
+      setTagFormMode(null)
+      setEditingTag(null)
+      doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '操作失败')
+    } finally {
+      setTagFormSubmitting(false)
+    }
+  }
+
+  const handleTagDelete = async (id: number, name: string) => {
+    if (!confirm(`确认删除标签「${name}」？`)) return
+    try {
+      await deleteTag(id)
+      toast.success('已删除')
+      doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : '删除失败')
+    }
+  }
+
   const selectedTagNames = allTags.filter(t => selectedTagIds.includes(t.id))
   const otherTags = tagStats.filter(s => !selectedTagIds.includes(s.id) && s.count > 0)
 
@@ -417,11 +504,14 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <FiFolder size={14} className="text-purple-400" />
               <span className="text-sm font-semibold text-gray-300">分类</span>
-              <button onClick={() => setCategoriesModalOpen(true)} className="text-[10px] text-purple-400/60 hover:text-purple-300 ml-1 transition-colors">管理</button>
+              <button onClick={() => openCatForm('create')} className="text-[10px] text-purple-400/60 hover:text-purple-300 ml-auto transition-colors">新增</button>
+              <button onClick={() => { setCatEditMode(v => !v); setTagEditMode(false) }} className={`text-[10px] transition-colors ${catEditMode ? 'text-accent-400' : 'text-purple-400/60 hover:text-purple-300'}`}>
+                {catEditMode ? '完成' : '编辑'}
+              </button>
               {selectedCategoryIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-purple-400 ml-1">({selectedCategoryIds.length})</span>
-                  <button onClick={() => setSelectedCategoryIds([])} className="text-xs text-purple-400/70 hover:text-purple-300 ml-2 transition-colors">清除</button>
+                  <button onClick={() => setSelectedCategoryIds([])} className="text-xs text-purple-400/70 hover:text-purple-300 transition-colors">清除</button>
                 </>
               )}
             </div>
@@ -432,19 +522,31 @@ export default function Dashboard() {
                 flatCategories.map(c => {
                   const active = selectedCategoryIds.includes(c.id)
                   return (
-                    <button
-                      key={`cat-${c.id}`}
-                      onClick={() => toggleCategory(c.id)}
-                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors max-w-full sm:max-w-[320px] ${
-                        active
-                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                          : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
-                      }`}
-                    >
-                      {active && <span className="text-purple-300 shrink-0">✓</span>}
-                      <span className="truncate min-w-0">{c.label}</span>
-                    <span className="text-gray-600 shrink-0">{catStats.get(c.id) ?? 0}</span>
-                    </button>
+                    <div key={`cat-${c.id}`} className="flex items-center gap-1 group">
+                      <button
+                        onClick={() => catEditMode ? null : toggleCategory(c.id)}
+                        onDoubleClick={() => catEditMode ? openCatForm('edit', categories.find(cat => cat.id === c.id)) : null}
+                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors max-w-full sm:max-w-[320px] ${
+                          active
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                        } ${catEditMode ? 'cursor-default' : 'cursor-pointer'}`}
+                      >
+                        {active && <span className="text-purple-300 shrink-0">✓</span>}
+                        <span className="truncate min-w-0">{c.label}</span>
+                        <span className="text-gray-600 shrink-0">{catStats.get(c.id) ?? 0}</span>
+                      </button>
+                      {catEditMode && (
+                        <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                          <button onClick={() => openCatForm('edit', categories.find(cat => cat.id === c.id))} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
+                            <FiEdit2 size={12} />
+                          </button>
+                          <button onClick={() => handleCatDelete(c.id, c.name)} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
+                            <FiTrash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )
                 })
               )}
@@ -455,11 +557,14 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <FiTag size={14} className="text-neon-400" />
               <span className="text-sm font-semibold text-gray-300">标签</span>
-              <button onClick={() => setTagsModalOpen(true)} className="text-[10px] text-neon-400/60 hover:text-neon-300 ml-1 transition-colors">管理</button>
+              <button onClick={() => openTagForm('create')} className="text-[10px] text-neon-400/60 hover:text-neon-300 ml-auto transition-colors">新增</button>
+              <button onClick={() => { setTagEditMode(v => !v); setCatEditMode(false) }} className={`text-[10px] transition-colors ${tagEditMode ? 'text-accent-400' : 'text-neon-400/60 hover:text-neon-300'}`}>
+                {tagEditMode ? '完成' : '编辑'}
+              </button>
               {selectedTagIds.length > 0 && (
                 <>
                   <span className="text-[10px] text-neon-400 ml-1">({selectedTagIds.length})</span>
-                  <button onClick={() => setSelectedTagIds([])} className="text-xs text-neon-400/70 hover:text-neon-300 ml-2 transition-colors">清除</button>
+                  <button onClick={() => setSelectedTagIds([])} className="text-xs text-neon-400/70 hover:text-neon-300 transition-colors">清除</button>
                 </>
               )}
             </div>
@@ -490,32 +595,56 @@ export default function Dashboard() {
                   tagStats.map(s => {
                     const active = selectedTagIds.includes(s.id)
                     return (
-                      <button
-                        key={`tag-${s.id}`}
-                        onClick={() => toggleTag(s.id)}
-                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          active
-                            ? 'bg-neon-500/20 text-neon-300 border-neon-500/40'
-                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
-                        }`}
-                      >
-                        {active && <span className="text-neon-300 shrink-0">✓</span>}
-                        <span className="truncate"># {s.name}</span>
-                        <span className="shrink-0 text-gray-600">{s.count}</span>
-                      </button>
+                      <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
+                        <button
+                          onClick={() => tagEditMode ? null : toggleTag(s.id)}
+                          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                            active
+                              ? 'bg-neon-500/20 text-neon-300 border-neon-500/40'
+                              : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                          } ${tagEditMode ? 'cursor-default' : 'cursor-pointer'}`}
+                        >
+                          {active && <span className="text-neon-300 shrink-0">✓</span>}
+                          <span className="truncate"># {s.name}</span>
+                          <span className="shrink-0 text-gray-600">{s.count}</span>
+                        </button>
+                        {tagEditMode && (
+                          <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                            <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
+                              <FiEdit2 size={12} />
+                            </button>
+                            <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
+                              <FiTrash2 size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )
                   })
                 )
               ) : (
                 otherTags.map(s => (
-                  <button
-                    key={`tag-${s.id}`}
-                    onClick={() => toggleTag(s.id)}
-                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 transition-colors"
-                  >
-                    <span className="truncate"># {s.name}</span>
-                    <span className="shrink-0 text-gray-600">{s.count}</span>
-                  </button>
+                  <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
+                    <button
+                      onClick={() => tagEditMode ? null : toggleTag(s.id)}
+                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        tagEditMode ? 'cursor-default bg-white/5 text-gray-400 border-white/10' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 cursor-pointer'
+                      }`}
+                    >
+                      <span className="truncate"># {s.name}</span>
+                      <span className="shrink-0 text-gray-600">{s.count}</span>
+                    </button>
+                    {tagEditMode && (
+                      <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                        <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-accent-400 transition-colors">
+                          <FiEdit2 size={12} />
+                        </button>
+                        <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-rose-400 transition-colors">
+                          <FiTrash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))
               )}
               {otherTags.length === 0 && selectedTagNames.length > 0 && (
@@ -599,11 +728,49 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      <Modal open={categoriesModalOpen} onClose={() => setCategoriesModalOpen(false)} title="管理分类" size="xl">
-        <Categories />
+      <Modal open={catFormMode !== null} onClose={() => { setCatFormMode(null); setEditingCategory(null) }} title={editingCategory ? '编辑分类' : '新建分类'}>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">名称 *</label>
+            <input value={catFormName} onChange={e => setCatFormName(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="分类名称" />
+          </div>
+          {!editingCategory && (
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">父分类</label>
+              <select value={catFormParentId ?? ''} onChange={e => setCatFormParentId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
+                <option value="">无（顶级分类）</option>
+                {flatCategories.map(c => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">排序</label>
+            <input type="number" value={catFormSort} onChange={e => setCatFormSort(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="数字越小越靠前" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleCatSubmit} disabled={catFormSubmitting || !catFormName.trim()} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {catFormSubmitting ? '保存中...' : editingCategory ? '更新' : '创建'}
+            </button>
+            <button onClick={() => { setCatFormMode(null); setEditingCategory(null) }} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+          </div>
+        </div>
       </Modal>
-      <Modal open={tagsModalOpen} onClose={() => setTagsModalOpen(false)} title="管理标签" size="lg">
-        <Tags />
+
+      <Modal open={tagFormMode !== null} onClose={() => { setTagFormMode(null); setEditingTag(null) }} title={editingTag ? '编辑标签' : '新建标签'}>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">名称 *</label>
+            <input value={tagFormName} onChange={e => setTagFormName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTagSubmit()} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="标签名称" autoFocus />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleTagSubmit} disabled={tagFormSubmitting || !tagFormName.trim()} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {tagFormSubmitting ? '保存中...' : editingTag ? '更新' : '创建'}
+            </button>
+            <button onClick={() => { setTagFormMode(null); setEditingTag(null) }} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
+          </div>
+        </div>
       </Modal>
     </>
   )
