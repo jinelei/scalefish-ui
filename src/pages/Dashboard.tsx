@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiExternalLink, FiPaperclip, FiEdit2, FiTrash2, FiPlus, FiSave } from 'react-icons/fi'
+import { FiBookmark, FiFolder, FiTag, FiTrendingUp, FiSearch, FiX, FiExternalLink, FiPaperclip, FiEdit2, FiTrash2, FiPlus, FiCheck } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { searchBookmarks, togglePin, updateBookmark, deleteBookmark, batchUpdateBookmarks } from '../api/bookmarks'
@@ -504,9 +504,11 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <FiFolder size={14} className="text-purple-400" />
               <span className="text-sm font-semibold text-gray-300">分类</span>
-              <button onClick={() => openCatForm('create')} className="text-[10px] text-purple-400/60 hover:text-purple-300 ml-auto transition-colors">新增</button>
-              <button onClick={() => { setCatEditMode(v => !v); setTagEditMode(false) }} className={`text-[10px] transition-colors ${catEditMode ? 'text-accent-400' : 'text-purple-400/60 hover:text-purple-300'}`}>
-                {catEditMode ? '完成' : '编辑'}
+              <button onClick={() => openCatForm('create')} className="flex items-center gap-0.5 text-[10px] text-purple-400/60 hover:text-purple-300 ml-auto transition-colors">
+                <FiPlus size={11} />新增
+              </button>
+              <button onClick={() => { setCatEditMode(v => !v); setTagEditMode(false) }} className={`flex items-center gap-0.5 text-[10px] transition-colors ${catEditMode ? 'text-accent-400' : 'text-purple-400/60 hover:text-purple-300'}`}>
+                {catEditMode ? <><FiCheck size={11} />完成</> : <><FiEdit2 size={11} />编辑</>}
               </button>
               {selectedCategoryIds.length > 0 && (
                 <>
@@ -557,9 +559,11 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <FiTag size={14} className="text-neon-400" />
               <span className="text-sm font-semibold text-gray-300">标签</span>
-              <button onClick={() => openTagForm('create')} className="text-[10px] text-neon-400/60 hover:text-neon-300 ml-auto transition-colors">新增</button>
-              <button onClick={() => { setTagEditMode(v => !v); setCatEditMode(false) }} className={`text-[10px] transition-colors ${tagEditMode ? 'text-accent-400' : 'text-neon-400/60 hover:text-neon-300'}`}>
-                {tagEditMode ? '完成' : '编辑'}
+              <button onClick={() => openTagForm('create')} className="flex items-center gap-0.5 text-[10px] text-neon-400/60 hover:text-neon-300 ml-auto transition-colors">
+                <FiPlus size={11} />新增
+              </button>
+              <button onClick={() => { setTagEditMode(v => !v); setCatEditMode(false) }} className={`flex items-center gap-0.5 text-[10px] transition-colors ${tagEditMode ? 'text-accent-400' : 'text-neon-400/60 hover:text-neon-300'}`}>
+                {tagEditMode ? <><FiCheck size={11} />完成</> : <><FiEdit2 size={11} />编辑</>}
               </button>
               {selectedTagIds.length > 0 && (
                 <>
