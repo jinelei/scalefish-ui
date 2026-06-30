@@ -362,7 +362,6 @@ export default function Dashboard() {
     if (kw.length > 0) bmParams.keyword = kw
     const statsParams: Record<string, unknown> = {}
     if (catIds.length > 0) statsParams.categoryIds = catIds
-    if (tagIds.length > 0) statsParams.tagIds = tagIds
     Promise.all([
       searchBookmarks(bmParams),
       getCategoryTree(),
@@ -583,7 +582,6 @@ export default function Dashboard() {
   }
 
   const selectedTagNames = allTags.filter(t => selectedTagIds.includes(t.id))
-  const otherTags = tagStats.filter(s => !selectedTagIds.includes(s.id) && s.count > 0)
 
   const cards = [
     { label: '书签', value: stats.bookmarks, icon: FiBookmark, color: 'from-accent-500 to-blue-600' },
@@ -810,67 +808,38 @@ export default function Dashboard() {
             )}
 
             <div className="flex flex-nowrap overflow-x-auto gap-1.5 sm:flex-wrap sm:overflow-visible sm:gap-2 pb-1">
-              {otherTags.length === 0 && selectedTagNames.length === 0 ? (
-                allTags.length === 0 ? (
-                  <span className="text-sm text-gray-400">暂无标签</span>
-                ) : (
-                  tagStats.map(s => {
-                    const active = selectedTagIds.includes(s.id)
-                    return (
-                      <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
-                        <button
-                          onClick={() => tagEditMode ? null : toggleTag(s.id)}
-                          className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                            active
-                              ? 'bg-neon-500/20 text-neon-300 border-neon-500/40'
-                              : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
-                          } ${tagEditMode ? 'cursor-default' : 'cursor-pointer'}`}
-                        >
-                          {active && <span className="text-neon-300 shrink-0">✓</span>}
-                          <span className="truncate"># {s.name}</span>
-                          <span className="shrink-0 text-gray-600">{s.count}</span>
-                        </button>
-                        {tagEditMode && (
-                          <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
-                              <FiEdit2 size={14} />
-                            </button>
-                            <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
-                              <FiTrash2 size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })
-                )
+              {tagStats.length === 0 ? (
+                <span className="text-sm text-gray-400">暂无标签</span>
               ) : (
-                otherTags.map(s => (
-                  <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
-                    <button
-                      onClick={() => tagEditMode ? null : toggleTag(s.id)}
-                      className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                        tagEditMode ? 'cursor-default bg-white/5 text-gray-400 border-white/10' : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 cursor-pointer'
-                      }`}
-                    >
-                      <span className="truncate"># {s.name}</span>
-                      <span className="shrink-0 text-gray-600">{s.count}</span>
-                    </button>
-                    {tagEditMode && (
-                      <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                        <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
-                          <FiEdit2 size={14} />
-                        </button>
-                        <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
-                          <FiTrash2 size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-              {otherTags.length === 0 && selectedTagNames.length > 0 && (
-                <span className="text-sm text-gray-400">无其他标签</span>
+                tagStats.map(s => {
+                  const active = selectedTagIds.includes(s.id)
+                  return (
+                    <div key={`tag-${s.id}`} className="flex items-center gap-1 group">
+                      <button
+                        onClick={() => tagEditMode ? null : toggleTag(s.id)}
+                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                          active
+                            ? 'bg-neon-500/20 text-neon-300 border-neon-500/40'
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                        } ${tagEditMode ? 'cursor-default' : 'cursor-pointer'}`}
+                      >
+                        {active && <span className="text-neon-300 shrink-0">✓</span>}
+                        <span className="truncate"># {s.name}</span>
+                        <span className="shrink-0 text-gray-600">{s.count}</span>
+                      </button>
+                      {tagEditMode && (
+                        <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                          <button onClick={() => openTagForm('edit', allTags.find(t => t.id === s.id) || { id: s.id, name: s.name })} className="p-1 rounded hover:bg-white/10 text-accent-400 hover:text-accent-300 transition-colors">
+                            <FiEdit2 size={14} />
+                          </button>
+                          <button onClick={() => handleTagDelete(s.id, s.name)} className="p-1 rounded hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors">
+                            <FiTrash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
               )}
             </div>
           </motion.div>
