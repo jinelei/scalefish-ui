@@ -581,8 +581,6 @@ export default function Dashboard() {
     }
   }
 
-  const selectedTagNames = allTags.filter(t => selectedTagIds.includes(t.id))
-
   const cards = [
     { label: '书签', value: stats.bookmarks, icon: FiBookmark, color: 'from-accent-500 to-blue-600' },
     { label: '分类', value: stats.categories, icon: FiFolder, color: 'from-purple-500 to-purple-600' },
@@ -788,24 +786,6 @@ export default function Dashboard() {
                 </>
               )}
             </div>
-
-            {selectedTagNames.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-2 rounded-lg bg-neon-500/5 border border-neon-500/10">
-                {selectedTagNames.map(t => (
-                  <span
-                    key={`sel-${t.id}`}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-medium bg-neon-500/20 text-neon-300 border border-neon-500/30"
-                  >
-                    # {t.name}
-                    <FiX
-                      size={12}
-                      className="cursor-pointer hover:text-white transition-colors"
-                      onClick={() => toggleTag(t.id)}
-                    />
-                  </span>
-                ))}
-              </div>
-            )}
 
             <div className="flex flex-nowrap overflow-x-auto gap-1.5 sm:flex-wrap sm:overflow-visible sm:gap-2 pb-1">
               {tagStats.length === 0 ? (
