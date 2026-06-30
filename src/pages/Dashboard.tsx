@@ -122,7 +122,7 @@ function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel, onCategor
         <div className="flex gap-2">
           <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
             <option value="">无分类</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {flattenCategories(categories).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
           <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 transition-colors" title="新增分类">
             <FiPlus size={18} />
@@ -262,7 +262,7 @@ function EditBookmarkForm({ bookmark, categories, allTags, onSubmit, onCancel, o
         <div className="flex gap-2">
           <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
             <option value="">无分类</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {flattenCategories(categories).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
           <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 transition-colors" title="新增分类">
             <FiPlus size={18} />
@@ -906,7 +906,7 @@ export default function Dashboard() {
             <label className="text-xs text-gray-400 mb-1 block">选择目标分类</label>
             <select value={batchCategoryId ?? ''} onChange={e => setBatchCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
               <option value="">无分类</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {flattenCategories(categories).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
           <div className="flex gap-3 pt-2">

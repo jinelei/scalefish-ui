@@ -12,6 +12,16 @@ import type { BookmarkResponse, CategoryResponse, TagResponse, BookmarkSearchPar
 import Modal from '../components/Modal'
 import BookmarkView, { type ViewMode } from '../components/BookmarkView'
 
+function flattenCategories(
+  cats: CategoryResponse[],
+  parentPath: string[] = [],
+): { id: number; name: string; label: string }[] {
+  return cats.flatMap(c => [
+    { id: c.id, name: c.name, label: parentPath.length > 0 ? `${parentPath.join(' › ')} › ${c.name}` : c.name },
+    ...flattenCategories(c.children, [...parentPath, c.name]),
+  ])
+}
+
 const container = {
   hidden: {},
   show: { transition: { staggerChildren: 0.05 } },
@@ -113,7 +123,7 @@ function BookmarkForm({ initial, categories, tags, onSubmit, onCancel, onCategor
         <div className="flex gap-2">
           <select value={categoryId || ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="flex-1 bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
             <option value="">无分类</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {flattenCategories(categories).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
           <button type="button" onClick={() => { setShowNewCategory(!showNewCategory); setNewCategoryName('') }} className="px-2.5 py-2 rounded-lg bg-surface-800 border border-surface-500 text-neon-400 hover:text-neon-300 hover:border-neon-500/50 transition-colors" title="新增分类">
             <FiPlus size={18} />
@@ -318,7 +328,7 @@ export default function BookmarkManage() {
               className="flex-1 sm:flex-none bg-surface-800 border border-surface-500 rounded-lg px-3 py-2.5 sm:py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors min-w-0 sm:min-w-[120px]"
             >
               <option value="">全部分类</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {flattenCategories(categories).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
             <select
               value={filterPinned === undefined ? '' : filterPinned ? 'true' : 'false'}
