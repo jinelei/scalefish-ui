@@ -452,6 +452,9 @@ export default function Dashboard() {
       await action(ids)
       toast.success('批量操作完成')
       exitBatchMode()
+      setBatchCategoryModalOpen(false)
+      setBatchAddTagModalOpen(false)
+      setBatchRemoveTagModalOpen(false)
       doFetch(selectedCategoryIds, selectedTagIds, keyword, page)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : '批量操作失败')
