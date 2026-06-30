@@ -369,7 +369,7 @@ export default function Dashboard() {
       getTagStats(statsParams),
       getCategoryStats(),
     ]).then(([b, c, t, s, cs]) => {
-      setStats({ bookmarks: b.data.totalElements, categories: c.data.length, tags: t.data.length })
+      setStats({ bookmarks: b.data.totalElements, categories: b.data.totalDistinctCategories ?? c.data.length, tags: b.data.totalDistinctTags ?? t.data.length })
       setRecent(b.data.content)
       setTotalPages(b.data.totalPages)
       setTotalElements(b.data.totalElements)

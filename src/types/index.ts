@@ -9,6 +9,8 @@ export interface PageResponse<T> {
   totalElements: number;
   totalPages: number;
   currentPage: number;
+  totalDistinctCategories?: number;
+  totalDistinctTags?: number;
 }
 
 export interface BatchBookmarkRequest {
