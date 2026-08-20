@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
-import { login as loginApi, getMe, refreshToken as refreshTokenApi, verifyTotpLogin as verifyTotpLoginApi, heartbeat as heartbeatApi, logout as logoutApi } from '../api/auth'
+import { login as loginApi, getMe, refreshToken as refreshTokenApi, heartbeat as heartbeatApi, logout as logoutApi } from '../api/auth'
 import { getStoredRefreshToken } from '../api/client'
 import { createLogger } from '../utils/logger'
 import type { UserInfo } from '../types'
@@ -11,8 +11,7 @@ const HEARTBEAT_INTERVAL = 10000
 interface AuthContextType {
   user: UserInfo | null
   loading: boolean
-  login: (username?: string, password?: string) => Promise<string | null>
-  verifyTotpLogin: (totpToken: string, code: string) => Promise<void>
+  login: (username?: string, password?: string, totpCode?: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -137,30 +136,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }, [])
 
-  const login = useCallback(async (username?: string, password?: string): Promise<string | null> => {
+  const login = useCallback(async (username?: string, password?: string, totpCode?: string) => {
     const isCertLogin = !username && !password
     log.info('Logging in: %s', isCertLogin ? 'certificate' : 'username=' + username)
-    const res = await loginApi({ username: username || '', password: password || '' })
-    const { accessToken, refreshToken: rt, user: u, totpRequired, totpToken } = res.data
-    if (totpRequired && totpToken) {
-      log.info('TOTP required for userId=%d', u.id)
-      return totpToken
-    }
-    setAuthData({ accessToken, refreshToken: rt, user: u })
-    log.info('Login success: userId=%d', u.id)
-    return null
-  }, [setAuthData])
-
-  const verifyTotpLogin = useCallback(async (totpToken: string, code: string) => {
-    log.info('Verifying TOTP login')
-    const res = await verifyTotpLoginApi(totpToken, code)
+    const res = await loginApi({ username: username || '', password: password || '', totpCode })
     const { accessToken, refreshToken: rt, user: u } = res.data
     setAuthData({ accessToken, refreshToken: rt, user: u })
-    log.info('TOTP login success: userId=%d', u.id)
+    log.info('Login success: userId=%d', u.id)
   }, [setAuthData])
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, verifyTotpLogin, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

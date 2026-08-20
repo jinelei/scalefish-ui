@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getRegistrationStatus, certStatus } from '../api/auth'
+import { getRegistrationStatus, certStatus, getCaptchaStatus } from '../api/auth'
 
 export default function Login() {
-  const { user, login, verifyTotpLogin } = useAuth()
+  const { user, login } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [totpToken, setTotpToken] = useState<string | null>(null)
   const [totpCode, setTotpCode] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [allowRegister, setAllowRegister] = useState(true)
   const [checking, setChecking] = useState(true)
   const [certAvailable, setCertAvailable] = useState(false)
+  const [captchaEnabled, setCaptchaEnabled] = useState(false)
 
   useEffect(() => {
     getRegistrationStatus()
@@ -23,19 +23,20 @@ export default function Login() {
     certStatus()
       .then(res => setCertAvailable(res.data.available))
       .catch(() => setCertAvailable(false))
+
+    getCaptchaStatus()
+      .then(res => setCaptchaEnabled(res.data.enabled))
+      .catch(() => setCaptchaEnabled(false))
       .finally(() => setChecking(false))
   }, [])
 
-  if (user && !totpToken) return <Navigate to="/" replace />
+  if (user) return <Navigate to="/" replace />
 
   const handleCertLogin = async () => {
     setSubmitting(true)
     setError('')
     try {
-      const token = await login()
-      if (token) {
-        setTotpToken(token)
-      }
+      await login()
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -45,29 +46,13 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (totpToken) {
-      if (!totpCode.trim()) { setError('请输入验证码'); return }
-      setSubmitting(true)
-      setError('')
-      try {
-        await verifyTotpLogin(totpToken, totpCode.trim())
-        setTotpToken(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '验证失败')
-        setTotpCode('')
-      } finally {
-        setSubmitting(false)
-      }
-      return
-    }
-    if (!username.trim() || !password) { setError('请填写用户名和密码'); return }
+    if (!certAvailable && !username.trim()) { setError('请填写用户名'); return }
+    if (!certAvailable && !password) { setError('请填写密码'); return }
+    if (captchaEnabled && !totpCode.trim()) { setError('请输入验证码'); return }
     setSubmitting(true)
     setError('')
     try {
-      const token = await login(username, password)
-      if (token) {
-        setTotpToken(token)
-      }
+      await login(username, password, captchaEnabled ? totpCode.trim() : undefined)
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -75,17 +60,17 @@ export default function Login() {
     }
   }
 
-  const showCertButton = certAvailable && !totpToken
+  const showCertButton = certAvailable
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-900 px-4">
       <div className="w-full max-w-sm glass rounded-xl p-6 sm:p-8 space-y-6">
         <div className="text-center">
           <h1 className="text-xl font-bold">Scalefish</h1>
-          <p className="text-sm text-gray-500 mt-1">{totpToken ? '请输入两步验证码' : showCertButton ? '检测到客户端证书' : '登录以继续'}</p>
+          <p className="text-sm text-gray-500 mt-1">{showCertButton ? '检测到客户端证书' : '登录以继续'}</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!showCertButton && !totpToken ? (
+          {!showCertButton && (
             <>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">用户名</label>
@@ -109,7 +94,8 @@ export default function Login() {
                 />
               </div>
             </>
-          ) : totpToken ? (
+          )}
+          {captchaEnabled && !showCertButton && (
             <div>
               <label className="text-xs text-gray-500 mb-1 block">验证码</label>
               <input
@@ -119,10 +105,9 @@ export default function Login() {
                 placeholder="000000"
                 maxLength={6}
                 autoComplete="one-time-code"
-                autoFocus
               />
             </div>
-          ) : null}
+          )}
           {error && <p className="text-xs text-rose-400">{error}</p>}
           {showCertButton ? (
             <button
@@ -139,20 +124,11 @@ export default function Login() {
               disabled={submitting}
               className="w-full bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
             >
-              {submitting ? '验证中...' : totpToken ? '验证' : '登录'}
-            </button>
-          )}
-          {totpToken && (
-            <button
-              type="button"
-              onClick={() => { setTotpToken(null); setTotpCode(''); setError('') }}
-              className="w-full text-xs text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              返回
+              {submitting ? '验证中...' : '登录'}
             </button>
           )}
         </form>
-        {!checking && allowRegister && !totpToken && !showCertButton && (
+        {!checking && allowRegister && !showCertButton && (
           <p className="text-xs text-center text-gray-500">
             没有账号？
             <Link to="/register" className="text-accent-400 hover:text-accent-300 ml-1">注册</Link>

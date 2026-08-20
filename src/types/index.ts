@@ -110,6 +110,10 @@ export interface RegistrationStatus {
   allowRegistration: boolean;
 }
 
+export interface CaptchaStatus {
+  enabled: boolean;
+}
+
 export interface UserInfo {
   id: number;
   username: string;
