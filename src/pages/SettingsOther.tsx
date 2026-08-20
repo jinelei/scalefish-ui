@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FiSave, FiRefreshCw, FiGlobe } from 'react-icons/fi'
+import { FiSave, FiRefreshCw, FiGlobe, FiShield } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { getAppConfig, updateAppConfig } from '../api/app-config'
 import { batchRefreshFavicons } from '../api/bookmarks'
@@ -58,6 +58,49 @@ function FaviconRefreshSection() {
   )
 }
 
+function CaptchaSection() {
+  const [enabled, setEnabled] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    getAppConfig().then(res => {
+      setEnabled(res.data?.['captcha.enabled'] === 'true')
+    }).catch(() => {})
+  }, [])
+
+  const handleToggle = async () => {
+    setSaving(true)
+    try {
+      const newValue = !enabled
+      await updateAppConfig({ 'captcha.enabled': String(newValue) })
+      setEnabled(newValue)
+      toast.success(newValue ? '验证码已启用' : '验证码已关闭')
+    } catch {
+      toast.error('更新失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-gray-500">启用后，登录页面将显示验证码输入框（需要用户已开启两步验证）</p>
+      <button
+        onClick={handleToggle}
+        disabled={saving}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 text-xs font-semibold transition-all active:scale-95"
+      >
+        {enabled ? (
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+        ) : (
+          <span className="w-2 h-2 rounded-full bg-gray-600" />
+        )}
+        {saving ? '保存中...' : enabled ? '已启用' : '已关闭'}
+      </button>
+    </div>
+  )
+}
+
 export default function SettingsOther() {
   const [displayNameInput, setDisplayNameInput] = useState('')
   const [savingBrand, setSavingBrand] = useState(false)
@@ -112,6 +155,11 @@ export default function SettingsOther() {
       <div className="glass rounded-xl p-6 sm:p-8">
         <SectionHeader icon={FiRefreshCw} title="书签图标刷新" desc="为所有没有图标的书签自动获取网站图标" />
         <FaviconRefreshSection />
+      </div>
+
+      <div className="glass rounded-xl p-6 sm:p-8">
+        <SectionHeader icon={FiShield} title="登录验证码" desc="控制登录页面是否显示验证码输入框" />
+        <CaptchaSection />
       </div>
     </div>
   )
