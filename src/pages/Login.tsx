@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getRegistrationStatus, certStatus, getCaptchaStatus } from '../api/auth'
+import { getRegistrationStatus, certStatus } from '../api/auth'
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -13,7 +13,6 @@ export default function Login() {
   const [allowRegister, setAllowRegister] = useState(true)
   const [checking, setChecking] = useState(true)
   const [certAvailable, setCertAvailable] = useState(false)
-  const [captchaEnabled, setCaptchaEnabled] = useState(false)
 
   useEffect(() => {
     getRegistrationStatus()
@@ -23,10 +22,6 @@ export default function Login() {
     certStatus()
       .then(res => setCertAvailable(res.data.available))
       .catch(() => setCertAvailable(false))
-
-    getCaptchaStatus()
-      .then(res => setCaptchaEnabled(res.data.enabled))
-      .catch(() => setCaptchaEnabled(false))
       .finally(() => setChecking(false))
   }, [])
 
@@ -48,11 +43,10 @@ export default function Login() {
     e.preventDefault()
     if (!certAvailable && !username.trim()) { setError('请填写用户名'); return }
     if (!certAvailable && !password) { setError('请填写密码'); return }
-    if (captchaEnabled && !totpCode.trim()) { setError('请输入验证码'); return }
     setSubmitting(true)
     setError('')
     try {
-      await login(username, password, captchaEnabled ? totpCode.trim() : undefined)
+      await login(username, password, totpCode.trim() || undefined)
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -95,9 +89,9 @@ export default function Login() {
               </div>
             </>
           )}
-          {captchaEnabled && !showCertButton && (
+          {!showCertButton && (
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">验证码</label>
+              <label className="text-xs text-gray-500 mb-1 block">验证码（已启用两步验证时必填）</label>
               <input
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}

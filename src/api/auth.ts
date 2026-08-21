@@ -1,5 +1,5 @@
 import client from './client'
-import type { AuthResponse, LoginRequest, UserInfo, RegistrationStatus, CaptchaStatus, GenericResult } from '../types'
+import type { AuthResponse, LoginRequest, UserInfo, RegistrationStatus, GenericResult } from '../types'
 import { encryptPassword } from '../utils/crypto'
 
 export async function login(req: LoginRequest & { totpCode?: string }): Promise<GenericResult<AuthResponse>> {
@@ -76,10 +76,5 @@ export async function heartbeat(): Promise<GenericResult<void>> {
 
 export async function certStatus(): Promise<GenericResult<{ available: boolean }>> {
   const res = await client.get('/auth/cert-status')
-  return res.data
-}
-
-export async function getCaptchaStatus(): Promise<GenericResult<CaptchaStatus>> {
-  const res = await client.get('/auth/captcha-status')
   return res.data
 }
