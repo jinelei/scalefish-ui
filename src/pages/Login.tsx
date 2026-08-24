@@ -8,6 +8,7 @@ export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [allowRegister, setAllowRegister] = useState(true)
@@ -46,7 +47,7 @@ export default function Login() {
     setSubmitting(true)
     setError('')
     try {
-      await login(username, password, totpCode.trim() || undefined)
+      await login(username, password, totpCode.trim() || undefined, rememberMe)
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -100,6 +101,20 @@ export default function Login() {
                 maxLength={6}
                 autoComplete="one-time-code"
               />
+            </div>
+          )}
+          {!showCertButton && (
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-accent-600 bg-surface-700 border-gray-600 rounded focus:ring-accent-500"
+              />
+              <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-300 cursor-pointer">
+                记住我
+              </label>
             </div>
           )}
           {error && <p className="text-xs text-rose-400">{error}</p>}

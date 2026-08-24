@@ -1,20 +1,26 @@
 import axios from 'axios'
-import { refreshToken } from './auth'
 import { createLogger } from '../utils/logger'
 import { API_BASE_URL } from '../config'
 
 const log = createLogger('api-client')
 
-const REFRESH_KEY = 'scalefish_refresh_token'
+let accessTokenGetter: () => string | null = () => null
+let setAccessToken: (token: string | null) => void = () => {}
+
+export function setAuthTokenAccessor(getter: () => string | null, setter: (token: string | null) => void) {
+  accessTokenGetter = getter
+  setAccessToken = setter
+}
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   paramsSerializer: { indexes: null },
+  withCredentials: true,
 })
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('scalefish_access_token')
+  const token = accessTokenGetter()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -49,14 +55,6 @@ client.interceptors.response.use(
 
     if (err.response?.status === 401 && !originalRequest._retry) {
       log.warn('Received 401, attempting token refresh')
-      const refreshTokenStr = localStorage.getItem(REFRESH_KEY)
-      if (!refreshTokenStr) {
-        log.warn('No refresh token available, redirecting to login')
-        localStorage.removeItem('scalefish_access_token')
-        localStorage.removeItem(REFRESH_KEY)
-        window.location.href = '/login'
-        return Promise.reject(err)
-      }
 
       if (isRefreshing) {
         log.debug('Token refresh already in progress, queueing request')
@@ -75,19 +73,17 @@ client.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const res = await refreshToken(refreshTokenStr)
-        const { accessToken, refreshToken: newRefresh } = res.data
-        localStorage.setItem('scalefish_access_token', accessToken)
-        localStorage.setItem(REFRESH_KEY, newRefresh)
+        const res = await client.post('/auth/refresh')
+        const { accessToken: newAccessToken } = res.data.data
+        setAccessToken(newAccessToken)
         log.info('Token refreshed successfully')
-        processQueue(null, accessToken)
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`
+        processQueue(null, newAccessToken)
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
         return client(originalRequest)
       } catch (e) {
         log.error('Token refresh failed:', e)
         processQueue(e, null)
-        localStorage.removeItem('scalefish_access_token')
-        localStorage.removeItem(REFRESH_KEY)
+        setAccessToken(null)
         window.location.href = '/login'
         return Promise.reject(e)
       } finally {
@@ -100,9 +96,5 @@ client.interceptors.response.use(
     return Promise.reject(new Error(msg))
   },
 )
-
-export function getStoredRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_KEY)
-}
 
 export default client

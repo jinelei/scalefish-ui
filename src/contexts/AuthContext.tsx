@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
-import { login as loginApi, getMe, refreshToken as refreshTokenApi, heartbeat as heartbeatApi, logout as logoutApi } from '../api/auth'
-import { getStoredRefreshToken } from '../api/client'
+import { login as loginApi, getMe, heartbeat as heartbeatApi, logout as logoutApi } from '../api/auth'
 import { createLogger } from '../utils/logger'
 import type { UserInfo } from '../types'
+import { setAuthTokenAccessor } from '../api/client'
 
 const log = createLogger('AuthContext')
 
@@ -10,8 +10,9 @@ const HEARTBEAT_INTERVAL = 10000
 
 interface AuthContextType {
   user: UserInfo | null
+  accessToken: string | null
   loading: boolean
-  login: (username?: string, password?: string, totpCode?: string) => Promise<void>
+  login: (username?: string, password?: string, totpCode?: string, rememberMe?: boolean) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -20,8 +21,17 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Initialize axios client with token accessor
+  useEffect(() => {
+    setAuthTokenAccessor(
+      () => accessToken,
+      (token) => setAccessToken(token)
+    )
+  }, [accessToken])
 
   const refreshUser = useCallback(async () => {
     try {
@@ -35,8 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearSession = useCallback(() => {
     setUser(null)
-    localStorage.removeItem('scalefish_access_token')
-    localStorage.removeItem('scalefish_refresh_token')
+    setAccessToken(null)
   }, [])
 
   const logout = useCallback(async () => {
@@ -55,15 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession])
 
   // Session restore — works for both JWT and certificate-based auth
+  // With HttpOnly cookie, we just call /me to validate the session
   useEffect(() => {
     const restore = async () => {
-      const token = localStorage.getItem('scalefish_access_token')
-      const refresh = getStoredRefreshToken()
-
-      if (token) {
-        log.debug('Restoring JWT session...')
-      }
-
       try {
         const res = await getMe()
         setUser(res.data)
@@ -71,23 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
         return
       } catch {
-        log.warn('getMe() failed')
-      }
-
-      // JWT fallback: try refresh
-      if (token && refresh) {
-        try {
-          const res = await refreshTokenApi(refresh)
-          const { accessToken, refreshToken: newRefresh, user: u } = res.data
-          localStorage.setItem('scalefish_access_token', accessToken)
-          localStorage.setItem('scalefish_refresh_token', newRefresh)
-          setUser(u)
-          log.info('Session restored via refresh: userId=%d', u.id)
-          setLoading(false)
-          return
-        } catch {
-          log.warn('Session restore failed')
-        }
+        log.warn('getMe() failed - no valid session')
       }
 
       clearSession()
@@ -128,25 +115,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         heartbeatTimerRef.current = null
       }
     }
-  }, [clearSession, user])
+  }, [clearSession, user, accessToken])
 
-  const setAuthData = useCallback((data: { accessToken: string; refreshToken: string; user: UserInfo }) => {
-    localStorage.setItem('scalefish_access_token', data.accessToken)
-    localStorage.setItem('scalefish_refresh_token', data.refreshToken)
+  const setAuthData = useCallback((data: { accessToken: string; user: UserInfo }) => {
+    setAccessToken(data.accessToken)
     setUser(data.user)
   }, [])
 
-  const login = useCallback(async (username?: string, password?: string, totpCode?: string) => {
+  const login = useCallback(async (username?: string, password?: string, totpCode?: string, rememberMe?: boolean) => {
     const isCertLogin = !username && !password
     log.info('Logging in: %s', isCertLogin ? 'certificate' : 'username=' + username)
-    const res = await loginApi({ username: username || '', password: password || '', totpCode })
-    const { accessToken, refreshToken: rt, user: u } = res.data
-    setAuthData({ accessToken, refreshToken: rt, user: u })
+    const res = await loginApi({ username: username || '', password: password || '', totpCode, rememberMe })
+    const { accessToken: at, user: u } = res.data
+    setAuthData({ accessToken: at, user: u })
     log.info('Login success: userId=%d', u.id)
   }, [setAuthData])
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )
