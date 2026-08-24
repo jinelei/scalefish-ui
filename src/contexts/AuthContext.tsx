@@ -102,14 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const ping = async () => {
       try {
         await heartbeatApi()
-      } catch {
-        log.warn('Heartbeat failed, redirecting to login')
-        if (heartbeatTimerRef.current) {
-          clearInterval(heartbeatTimerRef.current)
-          heartbeatTimerRef.current = null
-        }
-        clearSession()
-        window.location.href = '/login'
+      } catch (e) {
+        // ⚠️ 心跳失败不自动登出，仅记录警告
+        // 真正的认证失败会通过 401 拦截器处理
+        log.warn('Heartbeat failed, will retry next interval')
+        // 不清除 session，不跳转登录，让下一次心跳重试
       }
     }
 

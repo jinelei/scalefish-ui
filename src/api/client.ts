@@ -82,11 +82,15 @@ client.interceptors.response.use(
         return client(originalRequest)
       } catch (e) {
         log.error('Token refresh failed:', e)
-        processQueue(e, null)
-        setAccessToken(null)
-        window.location.href = '/login'
-        return Promise.reject(e)
-      } finally {
+        // ❌ 仅在刷新真正失败（如 refresh token 彻底过期）时才登出
+        // 临时网络错误或其他错误不应强制登出
+        if (e instanceof Error && e.message?.includes('无效的刷新令牌')) {
+            setAccessToken(null)
+            window.location.href = '/login'
+        } else {
+            // 其他错误：保持 current token，待下一次刷新尝试
+            processQueue(e, null)
+        }
         isRefreshing = false
       }
     }
