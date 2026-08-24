@@ -64,24 +64,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession])
 
   // Session restore — works for both JWT and certificate-based auth
-  // With HttpOnly cookie, we just call /me to validate the session
+  // With HttpOnly cookie, we validate session if we have an access token
+  // On first visit before login, skip /me call to avoid 403
   useEffect(() => {
-    const restore = async () => {
-      try {
-        const res = await getMe()
-        setUser(res.data)
-        log.info('Session restored: userId=%d', res.data.id)
-        setLoading(false)
-        return
-      } catch {
-        log.warn('getMe() failed - no valid session')
+    // Only restore session if we already have an access token
+    // (e.g., from a previous login that persisted in memory, or rehydration)
+    if (accessToken) {
+      const restore = async () => {
+        try {
+          const res = await getMe()
+          setUser(res.data)
+          log.info('Session restored: userId=%d', res.data.id)
+          setLoading(false)
+          return
+        } catch {
+          log.warn('getMe() failed - no valid session')
+        }
       }
-
-      clearSession()
+      restore()
+    } else {
+      // No access token yet (first visit before login)
+      // Just set loading to false, don't call /me to avoid 403
       setLoading(false)
     }
-    restore()
-  }, [clearSession])
+  }, [accessToken, clearSession])
 
   // HTTP heartbeat polling — only runs when user is authenticated
   useEffect(() => {
