@@ -68,9 +68,18 @@ client.interceptors.response.use(
 
       try {
         const newToken = await doRefresh()
-        originalRequest._retry = true
-        originalRequest.headers.Authorization = `Bearer ${newToken}`
-        return client(originalRequest)
+        log.info('Retrying request with new token')
+        const retryConfig = {
+          method: originalRequest.method,
+          url: originalRequest.url,
+          data: originalRequest.data,
+          params: originalRequest.params,
+          headers: {
+            ...originalRequest.headers,
+            Authorization: `Bearer ${newToken}`,
+          },
+        }
+        return client(retryConfig)
       } catch (e) {
         log.error('Token refresh failed:', e)
         currentAccessToken = null
