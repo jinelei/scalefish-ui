@@ -4,12 +4,16 @@ import { API_BASE_URL } from '../config'
 
 const log = createLogger('api-client')
 
+let currentAccessToken: string | null = null
 let accessTokenGetter: () => string | null = () => null
 let setAccessToken: (token: string | null) => void = () => {}
 
 export function setAuthTokenAccessor(getter: () => string | null, setter: (token: string | null) => void) {
   accessTokenGetter = getter
-  setAccessToken = setter
+  setAccessToken = (token) => {
+    currentAccessToken = token
+    setter(token)
+  }
 }
 
 const client = axios.create({
@@ -20,7 +24,7 @@ const client = axios.create({
 })
 
 client.interceptors.request.use((config) => {
-  const token = accessTokenGetter()
+  const token = currentAccessToken ?? accessTokenGetter()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -36,6 +40,7 @@ function doRefresh(): Promise<string> {
       .post('/auth/refresh')
       .then((res) => {
         const newToken = res.data.data.accessToken
+        currentAccessToken = newToken
         setAccessToken(newToken)
         log.info('Token refreshed successfully')
         return newToken
@@ -68,6 +73,7 @@ client.interceptors.response.use(
         return client(originalRequest)
       } catch (e) {
         log.error('Token refresh failed:', e)
+        currentAccessToken = null
         setAccessToken(null)
         window.location.href = '/login'
         return Promise.reject(e)
