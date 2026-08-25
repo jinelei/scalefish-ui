@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Initialize axios client with token accessor
   useEffect(() => {
     setAuthTokenAccessor(
       () => accessToken,
@@ -56,30 +55,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login'
   }, [clearSession])
 
-  // Session restore — works for both JWT and certificate-based auth
-  // With HttpOnly cookie, we validate session if we have an access token
-  // On first visit before login, skip /me call to avoid 403
   useEffect(() => {
-    // Only restore session if we already have an access token
-    // (e.g., from a previous login that persisted in memory, or rehydration)
     if (accessToken) {
       const restore = async () => {
         try {
           const res = await getMe()
           setUser(res.data)
           log.info('Session restored: userId=%d', res.data.id)
-          setLoading(false)
-          return
         } catch {
           log.warn('getMe() failed - no valid session')
           clearSession()
+        } finally {
           setLoading(false)
         }
       }
       restore()
     } else {
-      // No access token yet (first visit before login)
-      // Just set loading to false, don't call /me to avoid 403
       setLoading(false)
     }
   }, [accessToken, clearSession])
