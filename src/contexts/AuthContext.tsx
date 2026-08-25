@@ -79,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         } catch {
           log.warn('getMe() failed - no valid session')
+          clearSession()
+          setLoading(false)
         }
       }
       restore()
@@ -101,12 +103,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const ping = async () => {
       try {
-        await heartbeatApi()
+        const res = await heartbeatApi()
+        const data = res.data.data
+        if (data?.accessToken) {
+          setAccessToken(data.accessToken)
+          log.debug('Heartbeat: access token refreshed')
+        }
       } catch (e) {
         // ⚠️ 心跳失败不自动登出，仅记录警告
-        // 真正的认证失败会通过 401 拦截器处理
+        // 真正的认证失败会通过 401/403 拦截器处理
         log.warn('Heartbeat failed, will retry next interval')
-        // 不清除 session，不跳转登录，让下一次心跳重试
       }
     }
 

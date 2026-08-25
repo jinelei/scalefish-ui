@@ -53,8 +53,8 @@ client.interceptors.response.use(
       return Promise.reject(err)
     }
 
-    if (err.response?.status === 401 && !originalRequest._retry) {
-      log.warn('Received 401, attempting token refresh')
+    if ((err.response?.status === 401 || err.response?.status === 403) && !originalRequest._retry) {
+      log.warn('Received %d, attempting token refresh', err.response.status)
 
       if (isRefreshing) {
         log.debug('Token refresh already in progress, queueing request')
@@ -77,6 +77,7 @@ client.interceptors.response.use(
         const { accessToken: newAccessToken } = res.data.data
         setAccessToken(newAccessToken)
         log.info('Token refreshed successfully')
+        isRefreshing = false
         processQueue(null, newAccessToken)
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
         return client(originalRequest)
