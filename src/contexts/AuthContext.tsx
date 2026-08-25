@@ -1,12 +1,10 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
-import { login as loginApi, getMe, heartbeat as heartbeatApi, logout as logoutApi } from '../api/auth'
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
+import { login as loginApi, getMe, logout as logoutApi } from '../api/auth'
 import { createLogger } from '../utils/logger'
 import type { UserInfo } from '../types'
 import { setAuthTokenAccessor } from '../api/client'
 
 const log = createLogger('AuthContext')
-
-const HEARTBEAT_INTERVAL = 10000
 
 interface AuthContextType {
   user: UserInfo | null
@@ -23,9 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Initialize axios client with token accessor
   useEffect(() => {
     setAuthTokenAccessor(
       () => accessToken,
@@ -50,10 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     log.info('User logged out')
-    if (heartbeatTimerRef.current) {
-      clearInterval(heartbeatTimerRef.current)
-      heartbeatTimerRef.current = null
-    }
     try {
       await logoutApi()
     } catch {
@@ -63,62 +55,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login'
   }, [clearSession])
 
-  // Session restore — works for both JWT and certificate-based auth
-  // With HttpOnly cookie, we validate session if we have an access token
-  // On first visit before login, skip /me call to avoid 403
   useEffect(() => {
-    // Only restore session if we already have an access token
-    // (e.g., from a previous login that persisted in memory, or rehydration)
     if (accessToken) {
       const restore = async () => {
         try {
           const res = await getMe()
           setUser(res.data)
           log.info('Session restored: userId=%d', res.data.id)
-          setLoading(false)
-          return
         } catch {
           log.warn('getMe() failed - no valid session')
+          clearSession()
+        } finally {
+          setLoading(false)
         }
       }
       restore()
     } else {
-      // No access token yet (first visit before login)
-      // Just set loading to false, don't call /me to avoid 403
       setLoading(false)
     }
   }, [accessToken, clearSession])
-
-  // HTTP heartbeat polling — only runs when user is authenticated
-  useEffect(() => {
-    if (!user) {
-      if (heartbeatTimerRef.current) {
-        clearInterval(heartbeatTimerRef.current)
-        heartbeatTimerRef.current = null
-      }
-      return
-    }
-
-    const ping = async () => {
-      try {
-        await heartbeatApi()
-      } catch (e) {
-        // ⚠️ 心跳失败不自动登出，仅记录警告
-        // 真正的认证失败会通过 401 拦截器处理
-        log.warn('Heartbeat failed, will retry next interval')
-        // 不清除 session，不跳转登录，让下一次心跳重试
-      }
-    }
-
-    ping()
-    heartbeatTimerRef.current = setInterval(ping, HEARTBEAT_INTERVAL)
-    return () => {
-      if (heartbeatTimerRef.current) {
-        clearInterval(heartbeatTimerRef.current)
-        heartbeatTimerRef.current = null
-      }
-    }
-  }, [clearSession, user, accessToken])
 
   const setAuthData = useCallback((data: { accessToken: string; user: UserInfo }) => {
     setAccessToken(data.accessToken)
