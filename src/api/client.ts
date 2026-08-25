@@ -28,18 +28,23 @@ client.interceptors.request.use((config) => {
   return config
 })
 
-let isRefreshing = false
-let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = []
+let refreshPromise: Promise<string> | null = null
 
-function processQueue(error: unknown, token: string | null) {
-  pendingQueue.forEach((p) => {
-    if (error) {
-      p.reject(error)
-    } else {
-      p.resolve(token!)
-    }
-  })
-  pendingQueue = []
+function doRefresh(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = client
+      .post('/auth/refresh')
+      .then((res) => {
+        const newToken = res.data.data.accessToken
+        setAccessToken(newToken)
+        log.info('Token refreshed successfully')
+        return newToken
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+  return refreshPromise
 }
 
 client.interceptors.response.use(
@@ -56,43 +61,16 @@ client.interceptors.response.use(
     if ((err.response?.status === 401 || err.response?.status === 403) && !originalRequest._retry) {
       log.warn('Received %d, attempting token refresh', err.response.status)
 
-      if (isRefreshing) {
-        log.debug('Token refresh already in progress, queueing request')
-        return new Promise((resolve, reject) => {
-          pendingQueue.push({
-            resolve: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`
-              resolve(client(originalRequest))
-            },
-            reject,
-          })
-        })
-      }
-
-      originalRequest._retry = true
-      isRefreshing = true
-
       try {
-        const res = await client.post('/auth/refresh')
-        const { accessToken: newAccessToken } = res.data.data
-        setAccessToken(newAccessToken)
-        log.info('Token refreshed successfully')
-        isRefreshing = false
-        processQueue(null, newAccessToken)
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+        const newToken = await doRefresh()
+        originalRequest._retry = true
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
         return client(originalRequest)
       } catch (e) {
         log.error('Token refresh failed:', e)
-        // ❌ 仅在刷新真正失败（如 refresh token 彻底过期）时才登出
-        // 临时网络错误或其他错误不应强制登出
-        if (e instanceof Error && e.message?.includes('无效的刷新令牌')) {
-            setAccessToken(null)
-            window.location.href = '/login'
-        } else {
-            // 其他错误：保持 current token，待下一次刷新尝试
-            processQueue(e, null)
-        }
-        isRefreshing = false
+        setAccessToken(null)
+        window.location.href = '/login'
+        return Promise.reject(e)
       }
     }
 
