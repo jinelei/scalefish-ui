@@ -21,7 +21,7 @@ function BookmarkCard({ bookmark, onPin }: {
   return (
     <div
       onClick={handleOpen}
-      className="group glass rounded-xl p-4 flex flex-col gap-2 cursor-pointer transition-all hover:border-accent-500/30 hover:bg-white/[0.04] min-h-[5rem]"
+      className="group glass rounded-lg sm:rounded-xl p-2.5 sm:p-4 flex flex-col gap-1.5 sm:gap-2 cursor-pointer transition-all hover:border-accent-500/30 hover:bg-white/[0.04] min-h-[4.5rem] sm:min-h-[5rem]"
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <img
@@ -311,7 +311,7 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
             </div>
           </div>
 
-          <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2.5 sm:flex-wrap sm:overflow-visible sm:pb-0.5">
+          <div className="flex flex-nowrap overflow-x-auto gap-1.5 pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleCategories.length === 0 && !loading ? (
               <span className="text-sm text-gray-500 py-1">暂无分类</span>
             ) : (
@@ -321,14 +321,14 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                   <button
                     key={cat.id}
                     onClick={() => toggleCategory(cat.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors shrink-0 ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors shrink-0 ${
                       active
                         ? 'bg-accent-500/20 text-accent-300 border-accent-500/40'
                         : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                     }`}
                   >
                     <span className={`shrink-0 ${active ? 'text-accent-300' : 'invisible'}`}>✓</span>
-                    <span className="truncate">{cat.name}</span>
+                    <span className="truncate max-w-[8rem]">{cat.name}</span>
                     <span className="text-gray-600 shrink-0">{cat.count}</span>
                   </button>
                 )
@@ -337,7 +337,7 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
             {hasMoreCategories && (
               <button
                 onClick={() => setCategoriesExpanded(!categoriesExpanded)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm text-gray-500 hover:text-gray-300 border border-dashed border-white/10 hover:border-white/20 transition-colors shrink-0"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-gray-500 hover:text-gray-300 border border-dashed border-white/10 hover:border-white/20 transition-colors shrink-0"
               >
                 {categoriesExpanded ? '收起' : `展开全部 (${categoriesWithCounts.length})`}
               </button>
@@ -364,14 +364,14 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 pt-4 sm:pt-6 space-y-4">
+      <div className="px-3 sm:px-6 pt-3 sm:pt-5 pb-6 space-y-2.5 sm:space-y-3">
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-2.5 sm:space-y-3">
             {[1, 2].map(i => (
-              <div key={i} className="glass rounded-xl p-5 space-y-3 animate-pulse">
+              <div key={i} className="glass rounded-xl p-3 sm:p-4 space-y-2.5 animate-pulse">
                 <div className="h-5 w-32 bg-white/5 rounded" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-                  {[1, 2, 3].map(j => <div key={j} className="h-20 bg-white/5 rounded-xl" />)}
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3">
+                  {[1, 2, 3].map(j => <div key={j} className="h-16 sm:h-20 bg-white/5 rounded-xl" />)}
                 </div>
               </div>
             ))}
@@ -383,18 +383,22 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2.5 sm:space-y-3">
             {bookmarkBlocks.map(block => {
               const blockTagStats = getBlockTagStats(block.bookmarks)
               const isExpanded = expandedBlocks.has(block.category.id)
               const isOverflowing = overflowingBlocks.has(block.category.id)
               return (
-                <div key={block.category.id} className="glass rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-white/5">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-                      <span className="font-medium text-sm text-gray-200 shrink-0">{block.category.name}</span>
+                <section key={block.category.id} className="glass rounded-xl overflow-hidden border border-white/[0.07] bg-white/[0.02]">
+                  <header className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/[0.06] bg-white/[0.03]">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <h2 className="flex items-center gap-1.5 text-[13px] sm:text-sm font-semibold text-gray-200 shrink-0">
+                        <span className="w-1 h-3.5 rounded-full bg-accent-500/70 shrink-0" />
+                        {block.category.name}
+                        <span className="text-[11px] font-normal text-gray-500">{block.bookmarks.length}</span>
+                      </h2>
                       {blockTagStats.length > 0 && (
-                        <div className="flex flex-nowrap overflow-x-auto gap-1.5 sm:flex-wrap sm:overflow-visible">
+                        <div className="flex flex-nowrap overflow-x-auto gap-1 sm:flex-wrap sm:overflow-visible [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                           {blockTagStats.map(tag => {
                             const tagActive = selectedTagId === allTags.find(t => t.name === tag.name)?.id
                             return (
@@ -404,14 +408,14 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                                   const tagObj = allTags.find(t => t.name === tag.name)
                                   if (tagObj) toggleTag(tagObj.id)
                                 }}
-                                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border transition-colors shrink-0 ${
+                                className={`flex items-center gap-0.5 px-1.5 py-px rounded text-[11px] leading-4 font-medium border transition-colors shrink-0 ${
                                   tagActive
                                     ? 'bg-neon-500/20 text-neon-300 border-neon-500/40'
                                     : 'bg-white/5 text-gray-500 border-white/5 hover:bg-white/10 hover:text-gray-300'
                                 }`}
                               >
                                 <span>#</span>
-                                <span className="truncate">{tag.name}</span>
+                                <span className="truncate max-w-[7rem] sm:max-w-none">{tag.name}</span>
                                 <span className="text-gray-600">{tag.count}</span>
                               </button>
                             )
@@ -419,11 +423,11 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                         </div>
                       )}
                     </div>
-                  </div>
-                  <div className="p-4 relative">
+                  </header>
+                  <div className="p-2.5 sm:p-3.5 relative">
                     <div
                       ref={(el) => { if (el) gridRefMap.current.set(block.category.id, el); else gridRefMap.current.delete(block.category.id) }}
-                      className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 ${!isExpanded && isOverflowing ? 'max-h-[280px] overflow-hidden' : ''}`}
+                      className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3 ${!isExpanded && isOverflowing ? 'max-h-[280px] overflow-hidden' : ''}`}
                     >
                       {block.bookmarks.map(bm => (
                         <BookmarkCard key={bm.id} bookmark={bm} onPin={handlePin} />
@@ -441,7 +445,7 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                       </button>
                     )}
                   </div>
-                </div>
+                </section>
               )
             })}
           </div>

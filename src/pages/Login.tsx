@@ -15,7 +15,17 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState('')
+  // 被挤下线（同账号超出并发登录上限，FIFO 剔除最早会话）或会话过期时，拦截器把后端提示写入 sessionStorage
+  const [error, setError] = useState(() => {
+    try {
+      const kicked = sessionStorage.getItem('authKickedMessage')
+      if (kicked) {
+        sessionStorage.removeItem('authKickedMessage')
+        return kicked
+      }
+    } catch { /* ignore */ }
+    return ''
+  })
   const [submitting, setSubmitting] = useState(false)
   const [allowRegister, setAllowRegister] = useState(true)
   const [checking, setChecking] = useState(true)

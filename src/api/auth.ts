@@ -4,9 +4,8 @@ import { encryptPassword } from '../utils/crypto'
 
 export async function login(req: LoginRequest & { totpCode?: string; rememberMe?: boolean; fingerprint?: Record<string, string> }): Promise<GenericResult<AuthResponse>> {
   const encryptedPassword = await encryptPassword(req.password)
-  const body: Record<string, unknown> = { username: req.username, encryptedPassword }
+  const body: Record<string, unknown> = { username: req.username, encryptedPassword, rememberMe: !!req.rememberMe }
   if (req.totpCode) body.totpCode = req.totpCode
-  if (req.rememberMe) body.rememberMe = true
   if (req.fingerprint) body.fingerprint = req.fingerprint
   const res = await client.post('/auth/login', body)
   return res.data
@@ -20,6 +19,12 @@ export async function register(req: LoginRequest & { name?: string; email?: stri
 
 export async function refreshToken(token: string): Promise<GenericResult<AuthResponse>> {
   const res = await client.post('/auth/refresh', { refreshToken: token })
+  return res.data
+}
+
+// 页面加载时使用 HttpOnly Cookie 中的刷新令牌恢复会话（不依赖 JS 可读的 token）
+export async function refreshSession(): Promise<GenericResult<AuthResponse>> {
+  const res = await client.post('/auth/refresh')
   return res.data
 }
 

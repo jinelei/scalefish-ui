@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
-import { login as loginApi, getMe, logout as logoutApi } from '../api/auth'
+import { login as loginApi, getMe, logout as logoutApi, refreshSession } from '../api/auth'
 import { createLogger } from '../utils/logger'
 import type { UserInfo } from '../types'
 import { setAuthTokenAccessor } from '../api/client'
@@ -55,25 +55,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login'
   }, [clearSession])
 
+  // 页面加载时用刷新令牌 Cookie 恢复会话（access token 只保存在内存中，刷新页面后需重新换取）
   useEffect(() => {
-    if (accessToken) {
-      const restore = async () => {
-        try {
-          const res = await getMe()
-          setUser(res.data)
-          log.info('Session restored: userId=%d', res.data.id)
-        } catch {
-          log.warn('getMe() failed - no valid session')
-          clearSession()
-        } finally {
-          setLoading(false)
+    let alive = true
+    const bootstrap = async () => {
+      try {
+        const res = await refreshSession()
+        if (!alive) return
+        setAccessToken(res.data.accessToken)
+        setUser(res.data.user)
+        log.info('Session restored via refresh token: userId=%d', res.data.user.id)
+      } catch (err) {
+        if (!alive) return
+        // 被其他登录挤下线（FIFO 剔除）时把后端提示带到登录页
+        const msg = err instanceof Error ? err.message : ''
+        if (msg.includes('其他设备') || msg.includes('已失效')) {
+          try { sessionStorage.setItem('authKickedMessage', msg) } catch { /* ignore */ }
         }
+        log.info('No valid session on bootstrap: %s', msg)
+      } finally {
+        if (alive) setLoading(false)
       }
-      restore()
-    } else {
-      setLoading(false)
     }
-  }, [accessToken, clearSession])
+    bootstrap()
+    return () => { alive = false }
+  }, [])
 
   const setAuthData = useCallback((data: { accessToken: string; user: UserInfo }) => {
     setAccessToken(data.accessToken)

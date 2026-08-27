@@ -676,7 +676,7 @@ function FingerprintCard({
   actions: { label: string; icon: React.ReactNode; onClick: () => void; tone: 'accent' | 'rose' | 'gray' }[]
 }) {
   return (
-    <div className="rounded-lg bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-3 space-y-1.5">
+    <div className="rounded-lg bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 p-2.5 sm:p-3 space-y-1.5">
       <div className="flex items-center gap-1.5 text-xs font-medium text-gray-800 dark:text-gray-200">
         <FiSmartphone size={12} className="shrink-0" />
         <span className="truncate" title={device.userAgent || ''}>{deviceLabel(device)}</span>
@@ -685,18 +685,20 @@ function FingerprintCard({
         {shortHash(device.fingerprintSha256)}
       </div>
       <div className="flex items-center gap-1 text-[10px] text-gray-500">
-        <FiClock size={10} />
-        <span>最近登录：{formatFingerprintTime(device.lastLoginAt)}</span>
+        <FiClock size={10} className="shrink-0" />
+        <span className="truncate" title={`最近登录：${formatFingerprintTime(device.lastLoginAt)}`}>
+          最近登录：{formatFingerprintTime(device.lastLoginAt)}
+        </span>
       </div>
       {device.lastIp && (
-        <div className="text-[10px] text-gray-500 font-mono">IP：{device.lastIp}</div>
+        <div className="text-[10px] text-gray-500 font-mono break-all">IP：{device.lastIp}</div>
       )}
-      <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-1.5 pt-1">
         {actions.map((a, i) => (
           <button
             key={i}
             onClick={a.onClick}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors ${
+            className={`inline-flex items-center justify-center gap-1 px-2 py-1.5 sm:py-1 rounded text-[11px] sm:text-[10px] font-medium transition-colors ${
               a.tone === 'accent'
                 ? 'bg-accent-500/10 text-accent-600 dark:text-accent-400 hover:bg-accent-500/20'
                 : a.tone === 'rose'
@@ -819,7 +821,7 @@ function FingerprintsSection() {
 
   if (loading) {
     return (
-      <div id="fingerprints" className="glass rounded-xl p-6 sm:p-8 scroll-mt-20">
+      <div id="fingerprints" className="glass rounded-xl p-4 sm:p-6 lg:p-8 scroll-mt-20">
         <div className="space-y-4">
           <div className="h-6 w-40 bg-black/5 dark:bg-white/5 rounded animate-pulse" />
           <div className="h-24 w-full bg-black/5 dark:bg-white/5 rounded animate-pulse" />
@@ -829,13 +831,14 @@ function FingerprintsSection() {
   }
 
   return (
-    <div id="fingerprints" className="glass rounded-xl p-6 sm:p-8 scroll-mt-20">
+    <div id="fingerprints" className="glass rounded-xl p-4 sm:p-6 lg:p-8 scroll-mt-20">
       {confirmDialog}
       <SectionHeader icon={FiSmartphone} title="指纹管理" desc="根据客户端指纹管理设备信任策略：信任设备可跳过两步验证，不信任设备将被拒绝登录" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 移动端：横向滑动三列，每列固定 78vw 宽；md 及以上：三等分网格 */}
+      <div className="grid grid-flow-col auto-cols-[78vw] md:auto-cols-fr md:grid-flow-row md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0">
         {columns.map(col => (
-          <div key={col.key} className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 p-3">
-            <div className={`flex items-center gap-1.5 text-xs font-semibold mb-3 ${col.accent}`}>
+          <div key={col.key} className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 p-2.5 sm:p-3">
+            <div className={`flex items-center gap-1.5 text-xs font-semibold mb-2.5 sm:mb-3 ${col.accent}`}>
               {col.icon}
               {col.title}
               <span className="ml-auto text-gray-500 font-normal">{col.items.length}</span>

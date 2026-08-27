@@ -84,6 +84,11 @@ client.interceptors.response.use(
         return client(retryConfig)
       } catch (e) {
         log.error('Token refresh failed:', e)
+        // 刷新失败：会话过期或被其他登录挤下线（FIFO），挤下线提示透传到登录页
+        const reason = e instanceof Error ? e.message : ''
+        if (reason.includes('其他设备') || reason.includes('已失效')) {
+          try { sessionStorage.setItem('authKickedMessage', reason) } catch { /* ignore */ }
+        }
         currentAccessToken = null
         setAccessToken(null)
         window.location.href = '/login'

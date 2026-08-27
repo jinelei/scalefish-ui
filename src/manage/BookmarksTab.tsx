@@ -141,8 +141,8 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
     <div>
       {confirmDialog}
       {/* 筛选工具栏 */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <div className="relative flex-1 min-w-[180px]">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 mb-3">
+        <div className="relative col-span-2 sm:col-span-1 sm:flex-1 sm:min-w-[180px]">
           <FiSearch size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             value={keyword}
@@ -152,11 +152,11 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
             className="w-full bg-surface-800 border border-surface-500 rounded-lg pl-8 pr-3 py-1.5 text-xs text-gray-300 outline-none focus:border-accent-500/70"
           />
         </div>
-        <select value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value ? Number(e.target.value) : ''); setPage(0) }} className={inputCls}>
+        <select value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value ? Number(e.target.value) : ''); setPage(0) }} className={`${inputCls} w-full sm:w-auto`}>
           <option value="">全部分类</option>
           {flatCats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
-        <select value={tagFilter} onChange={e => { setTagFilter(e.target.value ? Number(e.target.value) : ''); setPage(0) }} className={inputCls}>
+        <select value={tagFilter} onChange={e => { setTagFilter(e.target.value ? Number(e.target.value) : ''); setPage(0) }} className={`${inputCls} w-full sm:w-auto`}>
           <option value="">全部标签</option>
           {allTags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
@@ -164,19 +164,19 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
           筛选
         </button>
         <button onClick={openCreate}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-500 hover:bg-accent-600 text-white text-xs font-semibold transition-colors">
+          className="col-span-2 sm:col-span-1 sm:ml-auto flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-500 hover:bg-accent-600 text-white text-xs font-semibold transition-colors">
           <FiPlus size={13} /> 新增书签
         </button>
       </div>
 
       {/* 批量操作工具栏 */}
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-accent-500/10 border border-accent-500/20">
-          <span className="text-xs text-accent-400 font-medium">已选 {selected.size} 项：</span>
+        <div className="grid grid-cols-[1fr_auto] sm:flex sm:flex-wrap items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-accent-500/10 border border-accent-500/20">
+          <span className="col-span-2 sm:col-span-1 text-xs text-accent-400 font-medium">已选 {selected.size} 项：</span>
           <select value={batchCategory} onChange={e => {
             const v = e.target.value
             setBatchCategory(v === '__clear__' ? '__clear__' : v ? Number(v) : '')
-          }} className={inputCls}>
+          }} className={`${inputCls} w-full sm:w-auto`}>
             <option value="">移动到分类…</option>
             <option value="__clear__">（移除分类 / 未分类）</option>
             {flatCats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
@@ -191,7 +191,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
             className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs transition-colors disabled:opacity-50">
             应用分类
           </button>
-          <select value={batchAddTag} onChange={e => setBatchAddTag(e.target.value ? Number(e.target.value) : '')} className={inputCls}>
+          <select value={batchAddTag} onChange={e => setBatchAddTag(e.target.value ? Number(e.target.value) : '')} className={`${inputCls} w-full sm:w-auto`}>
             <option value="">追加标签…</option>
             {allTags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
@@ -200,7 +200,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
             className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs transition-colors disabled:opacity-50">
             追加
           </button>
-          <select value={batchRemoveTag} onChange={e => setBatchRemoveTag(e.target.value ? Number(e.target.value) : '')} className={inputCls}>
+          <select value={batchRemoveTag} onChange={e => setBatchRemoveTag(e.target.value ? Number(e.target.value) : '')} className={`${inputCls} w-full sm:w-auto`}>
             <option value="">移除标签…</option>
             {allTags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
@@ -212,8 +212,8 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
         </div>
       )}
 
-      {/* 书签表格 */}
-      <div className="overflow-x-auto rounded-lg border border-black/5 dark:border-white/5">
+      {/* 书签表格（桌面端） */}
+      <div className="hidden sm:block overflow-x-auto rounded-lg border border-black/5 dark:border-white/5">
         <table className="w-full text-xs table-fixed">
           <thead>
             <tr className="border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
@@ -282,6 +282,78 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* 书签卡片列表（移动端） */}
+      <div className="sm:hidden space-y-2">
+        {loading ? (
+          [...Array(6)].map((_, i) => (
+            <div key={i} className="rounded-lg border border-black/5 dark:border-white/5 p-3 animate-pulse">
+              <div className="h-4 w-2/3 bg-black/5 dark:bg-white/5 rounded mb-2" />
+              <div className="h-3 w-full bg-black/5 dark:bg-white/5 rounded" />
+            </div>
+          ))
+        ) : bookmarks.length === 0 ? (
+          <div className="py-10 text-center text-xs text-gray-500">没有匹配的书签</div>
+        ) : (
+          bookmarks.map(b => (
+            <div
+              key={b.id}
+              className={`rounded-lg border p-3 transition-colors ${
+                selected.has(b.id)
+                  ? 'border-accent-500/40 bg-accent-500/5'
+                  : 'border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]'
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={selected.has(b.id)}
+                  onChange={() => toggleSelect(b.id)}
+                  className="accent-accent-500 mt-0.5 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img src={b.faviconUrl || DEFAULT_FAVICON} alt="" className="w-4 h-4 rounded shrink-0" />
+                    <span className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate" title={b.title}>{b.title}</span>
+                  </div>
+                  <a
+                    href={b.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-accent-400 truncate mt-1"
+                  >
+                    <FiExternalLink size={9} className="shrink-0" />
+                    <span className="truncate">{b.url}</span>
+                  </a>
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    {b.category && (
+                      <span className="px-1.5 py-0.5 rounded bg-accent-500/10 text-accent-600 dark:text-accent-400 text-[10px] whitespace-nowrap">
+                        {b.category.name}
+                      </span>
+                    )}
+                    {b.tags.map(t => (
+                      <span key={t.id} className="px-1.5 py-0.5 rounded bg-neon-500/10 text-neon-400 text-[10px] whitespace-nowrap">
+                        #{t.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button onClick={() => openEdit(b)} title="编辑"
+                    className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                    <FiEdit2 size={14} />
+                  </button>
+                  <button onClick={() => handleDelete(b)} title="删除"
+                    className="p-2 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">
+                    <FiTrash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* 分页 */}
