@@ -14,10 +14,11 @@ export interface PageResponse<T> {
 }
 
 export interface BatchBookmarkRequest {
-  ids: number[];
-  categoryId?: number | null;
-  addTagIds?: number[];
-  removeTagIds?: number[];
+  ids: number[]
+  categoryId?: number | null
+  clearCategory?: boolean
+  addTagIds?: number[]
+  removeTagIds?: number[]
 }
 
 export interface BookmarkRequest {

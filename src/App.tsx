@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import Manage from './pages/Manage'
 import ExtensionGuide from './pages/ExtensionGuide'
 import Settings from './pages/Settings'
 import Moment from './pages/Moment'
@@ -22,6 +23,7 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/manage" element={<Manage />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/settings/:section" element={<Settings />} />
         <Route path="/moments" element={<Moment />} />
