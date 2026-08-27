@@ -59,8 +59,10 @@ client.interceptors.response.use(
   },
   async (err) => {
     const originalRequest = err.config
-    if (originalRequest.url === '/auth/refresh') {
-      return Promise.reject(err)
+    const isAuthEndpoint = ['/auth/refresh', '/auth/login', '/auth/login-check', '/auth/register'].includes(originalRequest.url)
+    if (isAuthEndpoint) {
+      const msg = err.response?.data?.message || err.message || 'Network error'
+      return Promise.reject(new Error(msg))
     }
 
     if ((err.response?.status === 401 || err.response?.status === 403) && !originalRequest._retry) {

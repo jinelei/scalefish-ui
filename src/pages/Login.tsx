@@ -1,7 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { FiShield, FiAlertOctagon } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
 import { getRegistrationStatus, certStatus } from '../api/auth'
+import { loginCheck, type LoginCheckResult } from '../api/device-fingerprints'
+import { collectFingerprintFeatures } from '../utils/fingerprint'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('Login')
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -14,6 +20,9 @@ export default function Login() {
   const [allowRegister, setAllowRegister] = useState(true)
   const [checking, setChecking] = useState(true)
   const [certAvailable, setCertAvailable] = useState(false)
+  const [checkResult, setCheckResult] = useState<LoginCheckResult | null>(null)
+  const [checkingLogin, setCheckingLogin] = useState(false)
+  const checkedUsernameRef = useRef('')
 
   useEffect(() => {
     getRegistrationStatus()
@@ -27,6 +36,35 @@ export default function Login() {
   }, [])
 
   if (user) return <Navigate to="/" replace />
+
+  const runLoginCheck = async (name: string): Promise<LoginCheckResult | null> => {
+    const trimmed = name.trim()
+    if (!trimmed) return null
+    setCheckingLogin(true)
+    setError('')
+    try {
+      const fingerprint = collectFingerprintFeatures()
+      const res = await loginCheck(trimmed, fingerprint)
+      checkedUsernameRef.current = trimmed
+      setCheckResult(res.data)
+      return res.data
+    } catch (err) {
+      // 登录检查失败不阻断流程，回退为按两步验证开启情况处理（要求输入验证码）
+      setCheckResult(null)
+      checkedUsernameRef.current = ''
+      log.warn('login-check failed: %o', err)
+      return null
+    } finally {
+      setCheckingLogin(false)
+    }
+  }
+
+  const handleUsernameBlur = () => {
+    const trimmed = username.trim()
+    if (trimmed && trimmed !== checkedUsernameRef.current) {
+      runLoginCheck(trimmed)
+    }
+  }
 
   const handleCertLogin = async () => {
     setSubmitting(true)
@@ -44,10 +82,28 @@ export default function Login() {
     e.preventDefault()
     if (!certAvailable && !username.trim()) { setError('请填写用户名'); return }
     if (!certAvailable && !password) { setError('请填写密码'); return }
+
+    // 提交前进行登录检查（用户名未检查过或已变化时）
+    let result = checkResult
+    if (!certAvailable && username.trim() !== checkedUsernameRef.current) {
+      result = await runLoginCheck(username)
+    }
+
+    if (result?.blocked) {
+      setError('该设备已被标记为不信任，登录已被阻止，请在已信任的设备上登录后于设置页调整')
+      return
+    }
+
+    if (result?.totpRequired && !totpCode.trim()) {
+      setError('请输入两步验证码')
+      return
+    }
+
     setSubmitting(true)
     setError('')
     try {
-      await login(username, password, totpCode.trim() || undefined, rememberMe)
+      const fingerprint = certAvailable ? undefined : collectFingerprintFeatures()
+      await login(username, password, totpCode.trim() || undefined, rememberMe, fingerprint)
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {
@@ -56,6 +112,9 @@ export default function Login() {
   }
 
   const showCertButton = certAvailable
+  const showTotpInput = !showCertButton && !!checkResult?.totpRequired
+  const deviceBlocked = !!checkResult?.blocked
+  const deviceTrusted = !!checkResult?.trusted
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-900 px-4">
@@ -72,6 +131,7 @@ export default function Login() {
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  onBlur={handleUsernameBlur}
                   className="w-full bg-surface-700 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-accent-500 transition-colors"
                   placeholder="请输入用户名"
                   autoComplete="username"
@@ -90,9 +150,9 @@ export default function Login() {
               </div>
             </>
           )}
-          {!showCertButton && (
+          {showTotpInput && (
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">验证码（已启用两步验证时必填）</label>
+              <label className="text-xs text-gray-500 mb-1 block">两步验证码</label>
               <input
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
@@ -100,7 +160,29 @@ export default function Login() {
                 placeholder="000000"
                 maxLength={6}
                 autoComplete="one-time-code"
+                autoFocus
               />
+            </div>
+          )}
+          {!showCertButton && checkResult && !deviceBlocked && (
+            <div className="flex items-center gap-1.5 text-[11px]">
+              {deviceTrusted ? (
+                <span className="flex items-center gap-1 text-emerald-400">
+                  <FiShield size={11} />
+                  已信任设备，无需两步验证
+                </span>
+              ) : showTotpInput ? (
+                <span className="flex items-center gap-1 text-amber-400">
+                  <FiShield size={11} />
+                  新设备或待确认设备，需要两步验证
+                </span>
+              ) : null}
+            </div>
+          )}
+          {deviceBlocked && (
+            <div className="flex items-start gap-1.5 text-[11px] text-rose-400 bg-rose-500/10 rounded-lg px-3 py-2">
+              <FiAlertOctagon size={13} className="mt-0.5 shrink-0" />
+              <span>该设备已被标记为不信任，登录已被阻止。请使用已信任设备登录后，在「设置 - 指纹管理」中调整。</span>
             </div>
           )}
           {!showCertButton && (
@@ -130,10 +212,10 @@ export default function Login() {
           ) : (
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || checkingLogin || deviceBlocked}
               className="w-full bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
             >
-              {submitting ? '验证中...' : '登录'}
+              {submitting ? '验证中...' : checkingLogin ? '检查中...' : '登录'}
             </button>
           )}
         </form>
