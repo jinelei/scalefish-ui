@@ -8,6 +8,7 @@ import { exportBackup, importBackup } from '../utils/backup'
 import { batchRefreshFavicons } from '../api/bookmarks'
 import { listCerts, getCurrentCert, trustCert, deleteCert, type ClientCertResponse, type ParsedCert } from '../api/client-certs'
 import { listDeviceFingerprints, updateDeviceFingerprintStatus, deleteDeviceFingerprint, type DeviceFingerprintResponse, type DeviceTrustStatus } from '../api/device-fingerprints'
+import { useConfirm } from '../components/ConfirmDialog'
 import { createLogger } from '../utils/logger'
 
 const log = createLogger('Settings')
@@ -457,6 +458,7 @@ function FaviconSection() {
 }
 
 function CertificatesSection() {
+  const [confirm, confirmDialog] = useConfirm()
   const [certs, setCerts] = useState<ClientCertResponse[]>([])
   const [currentCert, setCurrentCert] = useState<ParsedCert | null>(null)
   const [loading, setLoading] = useState(true)
@@ -507,7 +509,13 @@ function CertificatesSection() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除此证书吗？')) return
+    const ok = await confirm({
+      title: '删除证书',
+      message: '确定要删除此证书吗？删除后该证书将无法再用于自动登录。',
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteCert(id)
       setMessage({ type: 'success', text: '证书已删除' })
@@ -531,6 +539,7 @@ function CertificatesSection() {
 
   return (
     <div id="certificates" className="glass rounded-xl p-6 sm:p-8 scroll-mt-20">
+      {confirmDialog}
       <div className="flex items-center gap-2.5 mb-4">
         <div className="w-9 h-9 rounded-lg bg-accent-500/10 border border-accent-500/20 flex items-center justify-center">
           <FiShield size={16} className="text-accent-500" />
@@ -705,6 +714,7 @@ function FingerprintCard({
 }
 
 function FingerprintsSection() {
+  const [confirm, confirmDialog] = useConfirm()
   const [devices, setDevices] = useState<DeviceFingerprintResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<number | null>(null)
@@ -737,7 +747,13 @@ function FingerprintsSection() {
   }
 
   const handleDelete = async (d: DeviceFingerprintResponse) => {
-    if (!confirm('确定删除该设备指纹吗？删除后该设备再次登录将重新出现在待处理中。')) return
+    const ok = await confirm({
+      title: '删除设备指纹',
+      message: '确定删除该设备指纹吗？删除后该设备再次登录将重新出现在待处理中。',
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     setBusyId(d.id)
     try {
       await deleteDeviceFingerprint(d.id)
@@ -814,6 +830,7 @@ function FingerprintsSection() {
 
   return (
     <div id="fingerprints" className="glass rounded-xl p-6 sm:p-8 scroll-mt-20">
+      {confirmDialog}
       <SectionHeader icon={FiSmartphone} title="指纹管理" desc="根据客户端指纹管理设备信任策略：信任设备可跳过两步验证，不信任设备将被拒绝登录" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {columns.map(col => (

@@ -7,7 +7,6 @@ import { getAppConfig } from '../api/app-config'
 
 const navLinks = [
   { to: '/', label: '书签' },
-  { to: '/manage', label: '管理' },
   { to: '/moments', label: '时刻' },
   { to: '/settings', label: '设置' },
 ]

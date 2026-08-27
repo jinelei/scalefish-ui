@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { getAllTags, getTagStats, createTag, updateTag, deleteTag } from '../api/tags'
+import { useConfirm } from '../components/ConfirmDialog'
 import type { TagResponse, TagStatsResponse } from '../types'
 
 export default function TagsTab() {
+  const [confirm, confirmDialog] = useConfirm()
   const [tags, setTags] = useState<TagResponse[]>([])
   const [stats, setStats] = useState<TagStatsResponse[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,7 +68,13 @@ export default function TagsTab() {
 
   const handleDelete = async (t: TagResponse) => {
     const count = countOf(t.id)
-    if (!confirm(`确定删除标签「${t.name}」吗？\n\n该标签会从 ${count} 个关联书签上移除，书签本身不会被删除。`)) return
+    const ok = await confirm({
+      title: `删除标签「${t.name}」`,
+      message: `该标签会从 ${count} 个关联书签上移除，书签本身不会被删除。此操作不可撤销。`,
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteTag(t.id)
       toast.success('标签已删除')
@@ -82,6 +90,7 @@ export default function TagsTab() {
 
   return (
     <div>
+      {confirmDialog}
       <div className="flex items-center gap-2 mb-4">
         <input
           value={newName}

@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { FiPlus, FiEdit2, FiTrash2, FiMove, FiFolder } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import Modal from '../components/Modal'
+import { useConfirm } from '../components/ConfirmDialog'
 import { getCategoryTree, getCategoryStats, createCategory, updateCategory, deleteCategory, mergeCategories } from '../api/categories'
 import type { CategoryResponse, CategoryStatsResponse } from '../types'
 
@@ -17,6 +18,7 @@ const flatten = (cats: CategoryResponse[], depth = 0): FlatCategory[] =>
 const collectIds = (c: CategoryResponse): number[] => [c.id, ...c.children.flatMap(collectIds)]
 
 export default function CategoriesTab() {
+  const [confirm, confirmDialog] = useConfirm()
   const [tree, setTree] = useState<CategoryResponse[]>([])
   const [stats, setStats] = useState<CategoryStatsResponse[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,11 +84,17 @@ export default function CategoriesTab() {
   const handleDelete = async (cat: CategoryResponse) => {
     const descendantCount = collectIds(cat).length - 1
     const count = statsMap.get(cat.id) || 0
-    const msg = `确定删除分类「${cat.name}」吗？\n\n` +
-      `· 该分类（含子分类）下共 ${count} 个书签将变为「未分类」\n` +
-      (descendantCount > 0 ? `· 其 ${descendantCount} 个子分类将提升为根分类，不会被删除\n` : '') +
+    const message =
+      `该分类（含子分类）下共 ${count} 个书签将变为「未分类」\n` +
+      (descendantCount > 0 ? `其 ${descendantCount} 个子分类将提升为根分类，不会被删除\n` : '') +
       `\n此操作不可撤销。`
-    if (!confirm(msg)) return
+    const ok = await confirm({
+      title: `删除分类「${cat.name}」`,
+      message,
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteCategory(cat.id)
       toast.success('分类已删除')
@@ -104,7 +112,12 @@ export default function CategoriesTab() {
     if (!sourceCat || !targetCat || sourceCat.id === targetCat.id) return
     setMergeTarget(targetCat)
     const count = statsMap.get(sourceCat.id) || 0
-    if (!confirm(`将分类「${sourceCat.name}」合并到「${targetCat.name}」？\n\n该分类及其所有子分类下共 ${count} 个书签会移动到「${targetCat.name}」，分类本身保留（变为空分类）。`)) {
+    const ok = await confirm({
+      title: '合并分类',
+      message: `将分类「${sourceCat.name}」合并到「${targetCat.name}」？\n\n该分类及其所有子分类下共 ${count} 个书签会移动到「${targetCat.name}」，分类本身保留（变为空分类）。`,
+      confirmText: '合并',
+    })
+    if (!ok) {
       setMergeTarget(null)
       return
     }
@@ -125,6 +138,7 @@ export default function CategoriesTab() {
 
   return (
     <div>
+      {confirmDialog}
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs text-gray-500">拖动一个分类到另一个分类上，可把其下全部书签合并过去</p>
         <button onClick={() => openCreate()}

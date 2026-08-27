@@ -1,92 +1,14 @@
 import { useEffect, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
-import { FiSearch, FiX, FiPaperclip, FiCornerDownLeft } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
+import { FiSearch, FiX, FiPaperclip, FiCornerDownLeft, FiPlus, FiSettings } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { searchBookmarks, togglePin, createBookmark } from '../api/bookmarks'
+import { searchBookmarks, togglePin } from '../api/bookmarks'
 import { getCategoryTree } from '../api/categories'
 import { getAllTags, getTagStats } from '../api/tags'
-import type { BookmarkResponse, CategoryResponse, TagResponse, BookmarkRequest } from '../types'
-import Modal from '../components/Modal'
+import type { BookmarkResponse, CategoryResponse, TagResponse } from '../types'
+import BookmarkEditModal from '../manage/BookmarkEditModal'
 
 const DEFAULT_FAVICON = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%239ca3af%22%3E%3Cpath%20d%3D%22M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm-1%2017.93c-3.95-.49-7-3.85-7-7.93%200-.62.08-1.21.21-1.79L9%2015v1c0%201.1.9%202%202%202v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55%200%201-.45%201-1V7h2c1.1%200%202-.9%202-2v-.41c2.93%201.19%205%204.06%205%207.41%200%202.08-.8%203.97-2.1%205.39z%22%2F%3E%3C%2Fsvg%3E'
-
-function flattenCategories(cats: CategoryResponse[], parentPath: string[] = []): { id: number; name: string; label: string }[] {
-  return cats.flatMap(c => [
-    { id: c.id, name: c.name, label: parentPath.length > 0 ? `${parentPath.join(' › ')} › ${c.name}` : c.name },
-    ...flattenCategories(c.children, [...parentPath, c.name]),
-  ])
-}
-
-function CreateBookmarkForm({ categories, allTags, onSubmit, onCancel }: {
-  categories: CategoryResponse[]
-  allTags: TagResponse[]
-  onSubmit: (data: BookmarkRequest) => Promise<void>
-  onCancel: () => void
-}) {
-  const [title, setTitle] = useState('')
-  const [url, setUrl] = useState('')
-  const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState<number | undefined>()
-  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
-  const [submitting, setSubmitting] = useState(false)
-
-  const toggleTag = (id: number) => {
-    setSelectedTagIds(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id])
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim() || !url.trim()) {
-      toast.error('标题和 URL 不能为空')
-      return
-    }
-    setSubmitting(true)
-    try {
-      await onSubmit({ title: title.trim(), url: url.trim(), description: description.trim() || undefined, categoryId, tagIds: selectedTagIds.length ? selectedTagIds : undefined })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="text-xs text-gray-400 mb-1 block">标题 *</label>
-        <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="书签标题" />
-      </div>
-      <div>
-        <label className="text-xs text-gray-400 mb-1 block">URL *</label>
-        <input value={url} onChange={e => setUrl(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors" placeholder="https://..." />
-      </div>
-      <div>
-        <label className="text-xs text-gray-400 mb-1 block">描述</label>
-        <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors resize-none h-20" placeholder="可选描述" />
-      </div>
-      <div>
-        <label className="text-xs text-gray-400 mb-1 block">分类</label>
-        <select value={categoryId || ''} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : undefined)} className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70 transition-colors">
-          <option value="">无分类</option>
-          {flattenCategories(categories).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-        </select>
-      </div>
-      <div>
-        <label className="text-xs text-gray-400 mb-1 block">标签</label>
-        <div className="flex flex-wrap gap-1.5">
-          {allTags.map(t => (
-            <button key={t.id} type="button" onClick={() => toggleTag(t.id)} className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${selectedTagIds.includes(t.id) ? 'bg-accent-500/20 text-accent-400 border border-accent-500/30' : 'bg-surface-800 text-gray-400 border border-surface-500 hover:border-surface-400'}`}>
-              {t.name}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="flex gap-3 pt-2">
-        <button type="submit" disabled={submitting} className="flex-1 bg-accent-600 hover:bg-accent-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50">
-          {submitting ? '创建中...' : '创建'}
-        </button>
-        <button type="button" onClick={onCancel} className="px-4 bg-surface-700 hover:bg-surface-600 text-gray-300 rounded-lg py-2 text-sm transition-colors">取消</button>
-      </div>
-    </form>
-  )
-}
 
 function BookmarkCard({ bookmark, onPin }: {
   bookmark: BookmarkResponse
@@ -312,12 +234,20 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
     doFetchBookmarks(searchKeyword)
   }
 
-  const handleCreateBookmark = async (data: BookmarkRequest) => {
-    await createBookmark(data)
-    toast.success('书签已创建')
+  const reloadMeta = useCallback(async () => {
+    try {
+      const [catRes, tagRes] = await Promise.all([getCategoryTree(), getAllTags()])
+      setCategories(catRes.data)
+      setAllTags(tagRes.data)
+    } catch {
+      toast.error('加载分类/标签失败')
+    }
+  }, [])
+
+  const handleCreated = useCallback(async () => {
     setShowCreateBookmark(false)
-    doFetchBookmarks(searchKeyword)
-  }
+    await Promise.all([doFetchBookmarks(searchKeyword), reloadMeta()])
+  }, [doFetchBookmarks, searchKeyword, reloadMeta])
 
   return (
     <div>
@@ -362,10 +292,26 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                   <span>K</span>
                 </span>
               )}
+              <button
+                onClick={() => setShowCreateBookmark(true)}
+                title="新增书签"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-white bg-accent-600 hover:bg-accent-500 transition-colors"
+              >
+                <FiPlus size={13} />
+                <span className="hidden sm:inline">新增</span>
+              </button>
+              <Link
+                to="/manage"
+                title="书签管理"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-accent-400 hover:bg-accent-500/10 transition-colors"
+              >
+                <FiSettings size={13} />
+                <span className="hidden sm:inline">管理</span>
+              </Link>
             </div>
           </div>
 
-          <div className="flex flex-nowrap overflow-x-auto gap-2 pb-0.5 sm:flex-wrap sm:overflow-visible">
+          <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2.5 sm:flex-wrap sm:overflow-visible sm:pb-0.5">
             {visibleCategories.length === 0 && !loading ? (
               <span className="text-sm text-gray-500 py-1">暂无分类</span>
             ) : (
@@ -501,14 +447,15 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
           </div>
         )}
 
-        <Modal open={showCreateBookmark} onClose={() => setShowCreateBookmark(false)} title="新增书签">
-          <CreateBookmarkForm
-            categories={categories}
-            allTags={allTags}
-            onSubmit={handleCreateBookmark}
-            onCancel={() => setShowCreateBookmark(false)}
-          />
-        </Modal>
+        <BookmarkEditModal
+          open={showCreateBookmark}
+          onClose={() => setShowCreateBookmark(false)}
+          categories={categories}
+          allTags={allTags}
+          editing={null}
+          onSaved={handleCreated}
+          onMetaChange={reloadMeta}
+        />
       </div>
     </div>
   )

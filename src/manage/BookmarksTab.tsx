@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { searchBookmarks, deleteBookmark, batchUpdateBookmarks } from '../api/bookmarks'
 import type { BookmarkResponse, CategoryResponse, TagResponse } from '../types'
 import BookmarkEditModal, { flattenCategories } from './BookmarkEditModal'
+import { useConfirm } from '../components/ConfirmDialog'
 
 const PAGE_SIZE = 50
 
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function BookmarksTab({ categories, allTags, reloadMeta }: Props) {
+  const [confirm, confirmDialog] = useConfirm()
   const [bookmarks, setBookmarks] = useState<BookmarkResponse[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
@@ -106,7 +108,13 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
   }
 
   const handleDelete = async (b: BookmarkResponse) => {
-    if (!confirm(`确定删除书签「${b.title}」吗？`)) return
+    const ok = await confirm({
+      title: '删除书签',
+      message: `确定删除书签「${b.title}」吗？此操作不可撤销。`,
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteBookmark(b.id)
       toast.success('已删除')
@@ -131,6 +139,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
 
   return (
     <div>
+      {confirmDialog}
       {/* 筛选工具栏 */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <div className="relative flex-1 min-w-[180px]">
@@ -298,6 +307,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
         allTags={allTags}
         editing={editing}
         onSaved={async () => { await load(); await reloadMeta() }}
+        onMetaChange={reloadMeta}
       />
     </div>
   )
