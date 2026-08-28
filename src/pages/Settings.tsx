@@ -660,7 +660,9 @@ function deviceLabel(d: DeviceFingerprintResponse): string {
 
 function formatFingerprintTime(s: string | null): string {
   if (!s) return '从未登录'
-  return new Date(s).toLocaleString('zh-CN')
+  // 后端 LocalDateTime 以 UTC 存储且序列化不带时区偏移，按 UTC 解析后转换为东八区显示
+  const d = new Date(s.endsWith('Z') || s.includes('+') ? s : s + 'Z')
+  return d.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
 }
 
 function shortHash(fp: string): string {
@@ -801,8 +803,7 @@ function FingerprintsSection() {
       items: trusted,
       empty: '暂无信任设备',
       actions: (d) => [
-        { label: '设为不信任', icon: <FiXCircle size={11} />, onClick: () => move(d, 'UNTRUSTED'), tone: 'rose' as const },
-        { label: '移回待处理', icon: <FiClock size={11} />, onClick: () => move(d, 'PENDING'), tone: 'gray' as const },
+        { label: '不信任', icon: <FiXCircle size={11} />, onClick: () => move(d, 'UNTRUSTED'), tone: 'rose' as const },
       ],
     },
     {
@@ -813,8 +814,7 @@ function FingerprintsSection() {
       items: untrusted,
       empty: '暂无不信任设备',
       actions: (d) => [
-        { label: '设为信任', icon: <FiCheck size={11} />, onClick: () => move(d, 'TRUSTED'), tone: 'accent' as const },
-        { label: '移回待处理', icon: <FiClock size={11} />, onClick: () => move(d, 'PENDING'), tone: 'gray' as const },
+        { label: '信任', icon: <FiCheck size={11} />, onClick: () => move(d, 'TRUSTED'), tone: 'accent' as const },
       ],
     },
   ]
@@ -834,8 +834,8 @@ function FingerprintsSection() {
     <div id="fingerprints" className="glass rounded-xl p-4 sm:p-6 lg:p-8 scroll-mt-20">
       {confirmDialog}
       <SectionHeader icon={FiSmartphone} title="指纹管理" desc="根据客户端指纹管理设备信任策略：信任设备可跳过两步验证，不信任设备将被拒绝登录" />
-      {/* 移动端：横向滑动三列，每列固定 78vw 宽；md 及以上：三等分网格 */}
-      <div className="grid grid-flow-col auto-cols-[78vw] md:auto-cols-fr md:grid-flow-row md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto md:overflow-visible [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0">
+      {/* 移动端：三列纵向堆叠、高度自适应；md 及以上：三等分网格 */}
+      <div className="grid grid-cols-1 grid-flow-row gap-3 md:gap-4 md:grid-cols-3">
         {columns.map(col => (
           <div key={col.key} className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 p-2.5 sm:p-3">
             <div className={`flex items-center gap-1.5 text-xs font-semibold mb-2.5 sm:mb-3 ${col.accent}`}>

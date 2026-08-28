@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { FiSearch, FiX, FiPaperclip, FiCornerDownLeft, FiPlus, FiSettings } from 'react-icons/fi'
+import { FiSearch, FiX, FiPaperclip, FiCornerDownLeft } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { searchBookmarks, togglePin } from '../api/bookmarks'
 import { getCategoryTree } from '../api/categories'
 import { getAllTags, getTagStats } from '../api/tags'
 import type { BookmarkResponse, CategoryResponse, TagResponse } from '../types'
 import BookmarkEditModal from '../manage/BookmarkEditModal'
+import { OPEN_CREATE_BOOKMARK_EVENT } from '../events'
 
 const DEFAULT_FAVICON = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%239ca3af%22%3E%3Cpath%20d%3D%22M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm-1%2017.93c-3.95-.49-7-3.85-7-7.93%200-.62.08-1.21.21-1.79L9%2015v1c0%201.1.9%202%202%202v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55%200%201-.45%201-1V7h2c1.1%200%202-.9%202-2v-.41c2.93%201.19%205%204.06%205%207.41%200%202.08-.8%203.97-2.1%205.39z%22%2F%3E%3C%2Fsvg%3E'
 
@@ -84,6 +84,12 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  useEffect(() => {
+    const handleOpenCreate = () => setShowCreateBookmark(true)
+    window.addEventListener(OPEN_CREATE_BOOKMARK_EVENT, handleOpenCreate)
+    return () => window.removeEventListener(OPEN_CREATE_BOOKMARK_EVENT, handleOpenCreate)
   }, [])
 
   useLayoutEffect(() => {
@@ -252,7 +258,7 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
   return (
     <div>
       <div className="sticky top-0 z-20 bg-surface-900 border-b border-white/5">
-        <div className="px-4 sm:px-6 pb-3 pt-4 sm:pt-6 space-y-3">
+        <div className="px-4 sm:px-6 pb-1.5 pt-4 sm:pt-6 space-y-3">
           <div className="relative">
             <FiSearch size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
@@ -292,26 +298,10 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                   <span>K</span>
                 </span>
               )}
-              <button
-                onClick={() => setShowCreateBookmark(true)}
-                title="新增书签"
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-white bg-accent-600 hover:bg-accent-500 transition-colors"
-              >
-                <FiPlus size={13} />
-                <span className="hidden sm:inline">新增</span>
-              </button>
-              <Link
-                to="/manage"
-                title="书签管理"
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-accent-400 hover:bg-accent-500/10 transition-colors"
-              >
-                <FiSettings size={13} />
-                <span className="hidden sm:inline">管理</span>
-              </Link>
             </div>
           </div>
 
-          <div className="flex flex-nowrap overflow-x-auto gap-1.5 pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-wrap gap-1.5 pb-0">
             {visibleCategories.length === 0 && !loading ? (
               <span className="text-sm text-gray-500 py-1">暂无分类</span>
             ) : (
@@ -364,7 +354,7 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
         </div>
       </div>
 
-      <div className="px-3 sm:px-6 pt-3 sm:pt-5 pb-6 space-y-2.5 sm:space-y-3">
+      <div className="px-3 sm:px-6 pt-2 sm:pt-2.5 pb-6 space-y-2.5 sm:space-y-3">
         {loading ? (
           <div className="space-y-2.5 sm:space-y-3">
             {[1, 2].map(i => (
