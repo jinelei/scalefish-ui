@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Scalefish Bookmark",
-  "version": "1.0.0",
-  "description": "快速将当前页面保存到 Scalefish 书签",
+  "version": "2.0.0",
+  "description": "Scalefish 书签浏览与保存（与网站共享登录态）",
   "permissions": [
     "activeTab",
-    "storage"
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -17,10 +17,6 @@
       "48": "icons/s-48.png",
       "128": "icons/s-128.png"
     }
-  },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
   },
   "icons": {
     "16": "icons/s-16.png",
