@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
-import { FiPlus, FiEdit2, FiTrash2, FiMove, FiFolder } from 'react-icons/fi'
+import { FiPlus, FiEdit2, FiTrash2, FiMove } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import Modal from '../components/Modal'
 import { useConfirm } from '../components/ConfirmDialog'
 import { getCategoryTree, getCategoryStats, createCategory, updateCategory, deleteCategory, mergeCategories } from '../api/categories'
 import type { CategoryResponse, CategoryStatsResponse } from '../types'
+import { CATEGORY_COLOR_PALETTE, categoryColor, randomCategoryColor, withAlpha } from '../utils/categoryColor'
 
 interface FlatCategory { id: number; name: string; depth: number; label: string; cat: CategoryResponse }
 
@@ -26,6 +27,7 @@ export default function CategoriesTab() {
   const [editing, setEditing] = useState<CategoryResponse | null>(null)
   const [name, setName] = useState('')
   const [parentId, setParentId] = useState<number | undefined>()
+  const [color, setColor] = useState<string>(CATEGORY_COLOR_PALETTE[0])
   const [saving, setSaving] = useState(false)
   const [mergeTarget, setMergeTarget] = useState<FlatCategory | null>(null)
 
@@ -50,6 +52,7 @@ export default function CategoriesTab() {
     setEditing(null)
     setName('')
     setParentId(parent?.id)
+    setColor(randomCategoryColor())
     setModalOpen(true)
   }
 
@@ -57,6 +60,7 @@ export default function CategoriesTab() {
     setEditing(cat)
     setName(cat.name)
     setParentId(undefined)
+    setColor(categoryColor(cat.color))
     setModalOpen(true)
   }
 
@@ -66,10 +70,10 @@ export default function CategoriesTab() {
     setSaving(true)
     try {
       if (editing) {
-        await updateCategory(editing.id, { name: name.trim(), parentId: parentId })
+        await updateCategory(editing.id, { name: name.trim(), parentId: parentId, color })
         toast.success('分类已更新')
       } else {
-        await createCategory({ name: name.trim(), parentId: parentId })
+        await createCategory({ name: name.trim(), parentId: parentId, color })
         toast.success('分类已创建')
       }
       setModalOpen(false)
@@ -174,7 +178,10 @@ export default function CategoriesTab() {
                           } ${mergeTarget?.id === cat.id ? 'ring-2 ring-emerald-500/50' : ''}`}
                         >
                           <FiMove size={13} className="text-gray-500 cursor-grab active:cursor-grabbing shrink-0" />
-                          <FiFolder size={13} className="text-accent-400 shrink-0" />
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/10"
+                            style={{ backgroundColor: categoryColor(cat.color) }}
+                          />
                           <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{cat.name}</span>
                           <span className="text-[10px] text-gray-500 shrink-0">{count} 个书签</span>
                           <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -210,6 +217,38 @@ export default function CategoriesTab() {
             <input value={name} onChange={e => setName(e.target.value)} autoFocus
               className="w-full bg-surface-800 border border-surface-500 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none focus:border-accent-500/70"
               placeholder="分类名称" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">主题色</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {CATEGORY_COLOR_PALETTE.map(c => {
+                const selected = color.toLowerCase() === c
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColor(c)}
+                    title={c}
+                    className={`w-7 h-7 rounded-full transition-all flex items-center justify-center ${
+                      selected ? 'ring-2 ring-offset-2 ring-offset-surface-800 scale-110' : 'hover:scale-110'
+                    }`}
+                    style={{
+                      backgroundColor: withAlpha(c, 0.25),
+                      ...(selected ? { boxShadow: `0 0 0 2px ${c}` } : {}),
+                    }}
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: c }} />
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                onClick={() => setColor(randomCategoryColor())}
+                className="ml-1 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-200 bg-surface-700 hover:bg-surface-600 transition-colors"
+              >
+                随机
+              </button>
+            </div>
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">父分类</label>

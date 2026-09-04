@@ -49,18 +49,21 @@ export interface CategoryRequest {
   name: string;
   parentId?: number;
   sortOrder?: number;
+  color?: string;
 }
 
 export interface CategoryResponse {
   id: number;
   name: string;
   sortOrder: number;
+  color?: string | null;
   children: CategoryResponse[];
 }
 
 export interface CategoryBrief {
   id: number;
   name: string;
+  color?: string | null;
 }
 
 export interface TagRequest {

@@ -7,6 +7,7 @@ import { getAllTags, getTagStats } from '../api/tags'
 import type { BookmarkResponse, CategoryResponse, TagResponse } from '../types'
 import BookmarkEditModal from '../manage/BookmarkEditModal'
 import { OPEN_CREATE_BOOKMARK_EVENT } from '../events'
+import { categoryColor, blockBackground, cardBackground, cardHoverBackground, withAlpha } from '../utils/categoryColor'
 
 const DEFAULT_FAVICON = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%239ca3af%22%3E%3Cpath%20d%3D%22M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm-1%2017.93c-3.95-.49-7-3.85-7-7.93%200-.62.08-1.21.21-1.79L9%2015v1c0%201.1.9%202%202%202v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55%200%201-.45%201-1V7h2c1.1%200%202-.9%202-2v-.41c2.93%201.19%205%204.06%205%207.41%200%202.08-.8%203.97-2.1%205.39z%22%2F%3E%3C%2Fsvg%3E'
 
@@ -18,11 +19,22 @@ function BookmarkCard({ bookmark, onPin }: {
     window.open(bookmark.url, '_blank', 'noopener,noreferrer')
   }
 
+  const color = categoryColor(bookmark.category?.color)
+
   return (
     <div
       onClick={handleOpen}
-      className="group glass rounded-lg sm:rounded-xl p-2.5 sm:p-4 flex flex-col gap-1.5 sm:gap-2 cursor-pointer transition-all hover:border-accent-500/30 hover:bg-white/[0.04] min-h-[4.5rem] sm:min-h-[5rem]"
+      className="group relative rounded-lg sm:rounded-xl p-2.5 sm:p-4 flex flex-col gap-1.5 sm:gap-2 cursor-pointer transition-all min-h-[4.5rem] sm:min-h-[5rem] overflow-hidden border border-white/[0.06] cat-card"
+      style={{
+        backgroundImage: cardBackground(color),
+        ['--cat-color' as string]: color,
+        ['--cat-bg-hover' as string]: cardHoverBackground(color),
+      }}
     >
+      <span
+        className="absolute left-0 top-0 bottom-0 w-[3px] shrink-0"
+        style={{ background: `linear-gradient(180deg, ${withAlpha(color, 0.9)}, ${withAlpha(color, 0.25)})` }}
+      />
       <div className="flex items-center gap-2.5 min-w-0">
         <img
           src={bookmark.faviconUrl || DEFAULT_FAVICON}
@@ -30,7 +42,12 @@ function BookmarkCard({ bookmark, onPin }: {
           className="w-5 h-5 rounded shrink-0"
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_FAVICON }}
         />
-        <span className="text-sm font-medium text-gray-200 truncate min-w-0">{bookmark.title}</span>
+        <span
+          className="text-sm font-medium truncate min-w-0 bg-clip-text text-transparent"
+          style={{ backgroundImage: `linear-gradient(90deg, ${withAlpha(color, 0.95)} 0%, ${color} 45%, rgb(226 232 240 / 0.95) 120%)` }}
+        >
+          {bookmark.title}
+        </span>
         {bookmark.pinned && (
           <FiPaperclip size={12} className="text-rose-400 shrink-0" />
         )}
@@ -192,16 +209,16 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
   }, [orderedTopLevelCategories, allBookmarks])
 
   const bookmarkBlocks = useMemo(() => {
-    const blocks: { category: { id: number; name: string }; bookmarks: BookmarkResponse[] }[] = []
+    const blocks: { category: { id: number; name: string; color?: string | null }; bookmarks: BookmarkResponse[] }[] = []
     for (const cat of orderedTopLevelCategories) {
       const catBookmarks = filteredBookmarks.filter(b => b.category?.id === cat.id)
       if (catBookmarks.length > 0) {
-        blocks.push({ category: { id: cat.id, name: cat.name }, bookmarks: catBookmarks })
+        blocks.push({ category: { id: cat.id, name: cat.name, color: cat.color }, bookmarks: catBookmarks })
       }
     }
     const uncategorized = filteredBookmarks.filter(b => !b.category)
     if (uncategorized.length > 0) {
-      blocks.push({ category: { id: -1, name: '未分类' }, bookmarks: uncategorized })
+      blocks.push({ category: { id: -1, name: '未分类', color: null }, bookmarks: uncategorized })
     }
     return blocks
   }, [filteredBookmarks, orderedTopLevelCategories])
@@ -307,19 +324,27 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
             ) : (
               visibleCategories.map(cat => {
                 const active = selectedCategoryId === cat.id
+                const chipColor = categoryColor(cat.color)
                 return (
                   <button
                     key={cat.id}
                     onClick={() => toggleCategory(cat.id)}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors shrink-0 ${
-                      active
-                        ? 'bg-accent-500/20 text-accent-300 border-accent-500/40'
-                        : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                      active ? '' : 'bg-white/5 border-white/10 hover:bg-white/10'
                     }`}
+                    style={active
+                      ? {
+                          backgroundColor: withAlpha(chipColor, 0.18),
+                          color: chipColor,
+                          borderColor: withAlpha(chipColor, 0.45),
+                        }
+                      : undefined}
                   >
-                    <span className={`shrink-0 ${active ? 'text-accent-300' : 'invisible'}`}>✓</span>
-                    <span className="truncate max-w-[8rem]">{cat.name}</span>
-                    <span className="text-gray-600 shrink-0">{cat.count}</span>
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: chipColor }} />
+                    <span className={active ? '' : 'text-gray-400'}>
+                      <span className="truncate max-w-[8rem] inline-block align-bottom">{cat.name}</span>
+                    </span>
+                    <span className={`shrink-0 ${active ? 'opacity-70' : 'text-gray-600'}`}>{cat.count}</span>
                   </button>
                 )
               })
@@ -378,13 +403,44 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
               const blockTagStats = getBlockTagStats(block.bookmarks)
               const isExpanded = expandedBlocks.has(block.category.id)
               const isOverflowing = overflowingBlocks.has(block.category.id)
+              const blockColor = categoryColor(block.category.color)
+              const isUncategorized = block.category.id === -1
               return (
-                <section key={block.category.id} className="glass rounded-xl overflow-hidden border border-white/[0.07] bg-white/[0.02]">
-                  <header className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-white/[0.06] bg-white/[0.03]">
+                <section
+                  key={block.category.id}
+                  className="glass cat-block rounded-xl overflow-hidden border"
+                  style={{
+                    backgroundImage: isUncategorized ? undefined : blockBackground(blockColor),
+                    borderColor: isUncategorized ? 'rgba(255,255,255,0.07)' : withAlpha(blockColor, 0.18),
+                  }}
+                >
+                  <header
+                    className="px-3 sm:px-4 py-2 sm:py-2.5 border-b"
+                    style={{
+                      borderColor: withAlpha(blockColor, 0.12),
+                      backgroundImage: isUncategorized ? undefined : `linear-gradient(90deg, ${withAlpha(blockColor, 0.08)}, transparent 70%)`,
+                    }}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                       <h2 className="flex items-center gap-1.5 text-[13px] sm:text-sm font-semibold text-gray-200 shrink-0">
-                        <span className="w-1 h-3.5 rounded-full bg-accent-500/70 shrink-0" />
-                        {block.category.name}
+                        <span
+                          className="w-1 h-3.5 rounded-full shrink-0"
+                          style={{
+                            background: isUncategorized
+                              ? 'rgba(148,163,184,0.5)'
+                              : `linear-gradient(180deg, ${blockColor}, ${withAlpha(blockColor, 0.4)})`,
+                          }}
+                        />
+                        {isUncategorized ? (
+                          <span className="text-gray-200">{block.category.name}</span>
+                        ) : (
+                          <span
+                            className="bg-clip-text text-transparent"
+                            style={{ backgroundImage: `linear-gradient(90deg, ${withAlpha(blockColor, 0.95)}, ${blockColor})` }}
+                          >
+                            {block.category.name}
+                          </span>
+                        )}
                         <span className="text-[11px] font-normal text-gray-500">{block.bookmarks.length}</span>
                       </h2>
                       {blockTagStats.length > 0 && (
@@ -424,7 +480,10 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
                       ))}
                     </div>
                     {!isExpanded && isOverflowing && (
-                      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-surface-900 via-surface-900/80 to-transparent pointer-events-none" />
+                      <div
+                        className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
+                        style={{ background: `linear-gradient(to top, ${withAlpha(blockColor, 0.10)}, transparent)` }}
+                      />
                     )}
                     {isOverflowing && (
                       <button

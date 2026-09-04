@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { getCategoryTree } from '../api/categories'
 import type { CategoryResponse } from '../types'
+import { categoryColor, withAlpha } from '../utils/categoryColor'
 
 const links = [
   { to: '/', label: '书签', icon: FiBookmark },
@@ -26,8 +27,8 @@ interface SidebarProps {
   displayName?: string
 }
 
-function getTopLevelCategories(tree: CategoryResponse[]): { id: number; name: string }[] {
-  return tree.map(c => ({ id: c.id, name: c.name }))
+function getTopLevelCategories(tree: CategoryResponse[]): { id: number; name: string; color?: string | null }[] {
+  return tree.map(c => ({ id: c.id, name: c.name, color: c.color }))
 }
 
 export default function Sidebar({ open, onClose, displayName }: SidebarProps) {
@@ -36,7 +37,7 @@ export default function Sidebar({ open, onClose, displayName }: SidebarProps) {
   const location = useLocation()
   const [bookmarkMenuOpen, setBookmarkMenuOpen] = useState(false)
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
-  const [categoryList, setCategoryList] = useState<{ id: number; name: string }[]>([])
+  const [categoryList, setCategoryList] = useState<{ id: number; name: string; color?: string | null }[]>([])
 
   useEffect(() => {
     getCategoryTree()
@@ -145,19 +146,22 @@ export default function Sidebar({ open, onClose, displayName }: SidebarProps) {
                               </NavLink>
                               {categoryList.map(cat => {
                                 const CatIcon = categoryIcon(cat.name)
+                                const active = isCategoryActive(cat.id)
+                                const catColor = categoryColor(cat.color)
                                 return (
                                   <NavLink
                                     key={cat.id}
                                     to={`/bookmarks/${cat.id}`}
-                                    className={
-                                      `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                                        isCategoryActive(cat.id)
-                                          ? 'bg-accent-500/10 text-accent-400 font-medium'
-                                          : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
-                                      }`
-                                    }
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                                      active ? '' : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+                                    }`}
+                                    style={active
+                                      ? { backgroundColor: withAlpha(catColor, 0.12), color: catColor, fontWeight: 500 }
+                                      : undefined}
                                   >
-                                    <CatIcon size={14} />
+                                    <span style={{ color: catColor }} className="opacity-80 shrink-0">
+                                      <CatIcon size={14} />
+                                    </span>
                                     <span className="truncate">{cat.name}</span>
                                   </NavLink>
                                 )
