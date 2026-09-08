@@ -201,7 +201,7 @@ export default function CategoriesTab() {
                             className="w-3 h-3 rounded-full shrink-0 ring-2 ring-white/10"
                             style={{ backgroundColor: categoryColor(cat.color) }}
                           />
-                          <span className="text-[15px] text-gray-800 dark:text-gray-100 font-medium truncate">{cat.name}</span>
+                          <span className="text-sm text-gray-800 dark:text-gray-100 font-medium truncate">{cat.name}</span>
                           <span className="text-xs text-gray-500 shrink-0">{count} 个书签</span>
                           <div className="ml-auto flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => openCreate(cat)} title="添加子分类"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { FiSun, FiMoon, FiMonitor, FiSettings, FiLogOut, FiPlus, FiList, FiMenu } from 'react-icons/fi'
+import { FiSun, FiMoon, FiMonitor, FiSettings, FiLogOut, FiPlus, FiMenu } from 'react-icons/fi'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 import { getAppConfig } from '../api/app-config'
@@ -94,18 +94,18 @@ export default function Layout() {
           <button
             onClick={openCreateBookmark}
             title="新增书签"
-            className="flex items-center gap-1 text-xs font-medium text-white bg-accent-600 hover:bg-accent-500 transition-colors px-2.5 py-1.5 rounded-lg cursor-pointer"
+            className="flex items-center gap-1 text-sm font-medium text-white bg-accent-600 hover:bg-accent-500 transition-colors px-3 py-1.5 rounded-lg cursor-pointer"
           >
-            <FiPlus size={14} />
+            <FiPlus size={15} />
             <span className="hidden sm:inline">新增书签</span>
           </button>
         )}
         <div className="relative">
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-200 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
           >
-            <span className="w-5 h-5 rounded-full bg-accent-600 flex items-center justify-center text-white text-[10px] font-medium">
+            <span className="w-6 h-6 rounded-full bg-accent-600 flex items-center justify-center text-white text-xs font-medium">
               {user?.username?.charAt(0).toUpperCase() || '?'}
             </span>
             <span className="hidden sm:inline">{user?.username}</span>
@@ -113,39 +113,30 @@ export default function Layout() {
           {userMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-1 z-50 w-44 glass rounded-lg py-1 shadow-xl border border-white/10">
-                <div className="px-3 py-2 text-xs text-gray-400 border-b border-white/5">
+              <div className="absolute right-0 top-full mt-1 z-50 w-48 glass rounded-lg py-1 shadow-xl border border-white/10">
+                <div className="px-3 py-2 text-sm text-gray-400 border-b border-white/5">
                   {user?.name || user?.username}
                 </div>
                 <button
                   onClick={cycleTheme}
                   title="点击切换 亮色 / 暗色 / 跟随系统"
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer"
                 >
-                  {theme === 'system' ? <FiMonitor size={13} /> : theme === 'light' ? <FiSun size={13} /> : <FiMoon size={13} />}
+                  {theme === 'system' ? <FiMonitor size={14} /> : theme === 'light' ? <FiSun size={14} /> : <FiMoon size={14} />}
                   <span className="flex-1 text-left">{themeLabel}</span>
                 </button>
-                {isBookmarkMode && (
-                  <button
-                    onClick={() => { setUserMenuOpen(false); navigate('/manage/bookmarks') }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer"
-                  >
-                    <FiList size={13} />
-                    管理书签
-                  </button>
-                )}
                 <button
                   onClick={() => { setUserMenuOpen(false); navigate('/settings') }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer"
                 >
-                  <FiSettings size={13} />
+                  <FiSettings size={14} />
                   设置
                 </button>
                 <button
                   onClick={() => { setUserMenuOpen(false); logout() }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-400 hover:text-rose-400 hover:bg-white/5 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-400 hover:text-rose-400 hover:bg-white/5 transition-colors cursor-pointer"
                 >
-                  <FiLogOut size={13} />
+                  <FiLogOut size={14} />
                   退出登录
                 </button>
               </div>
