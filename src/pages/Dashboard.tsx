@@ -80,7 +80,7 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
   const [categories, setCategories] = useState<CategoryResponse[]>([])
   const [allTags, setAllTags] = useState<TagResponse[]>([])
   const [searchKeyword, setSearchKeyword] = useState('')
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(baseCategoryId ?? null)
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null)
   const [categoriesExpanded, setCategoriesExpanded] = useState(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -169,8 +169,8 @@ export default function Dashboard({ baseCategoryId }: DashboardProps) {
 
   useEffect(() => {
     if (!mountedRef.current) return
-    setSelectedCategoryId(null)
     setSelectedTagId(null)
+    setSelectedCategoryId(baseCategoryId ?? null)
   }, [baseCategoryId])
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -8,6 +8,11 @@ import Manage from './pages/Manage'
 import ExtensionGuide from './pages/ExtensionGuide'
 import Settings from './pages/Settings'
 import Moment from './pages/Moment'
+
+function DashboardRoute() {
+  const { categoryId } = useParams()
+  return <Dashboard baseCategoryId={categoryId ? Number(categoryId) : undefined} />
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -22,7 +27,8 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<DashboardRoute />} />
+        <Route path="/bookmarks/:categoryId" element={<DashboardRoute />} />
         <Route path="/manage" element={<Manage />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/settings/:section" element={<Settings />} />
