@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FiSearch, FiEdit2, FiTrash2, FiPlus, FiExternalLink, FiArchive } from 'react-icons/fi'
+import { FiSearch, FiEdit2, FiTrash2, FiPlus, FiExternalLink, FiArchive, FiCpu } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { searchBookmarks, deleteBookmark, batchUpdateBookmarks, archiveBookmarks } from '../api/bookmarks'
+import { tagBookmarkWithAi, tagBatchWithAi } from '../api/ai-tagging'
 import type { BookmarkResponse, CategoryResponse, TagResponse } from '../types'
 import BookmarkEditModal, { flattenCategories } from './BookmarkEditModal'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -35,6 +36,8 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
   const [batchAddTag, setBatchAddTag] = useState<number | ''>('')
   const [batchRemoveTag, setBatchRemoveTag] = useState<number | ''>('')
   const [batchBusy, setBatchBusy] = useState(false)
+  const [aiBusyId, setAiBusyId] = useState<number | null>(null)
+  const [aiBatchBusy, setAiBatchBusy] = useState(false)
 
   const flatCats = flattenCategories(categories)
 
@@ -122,6 +125,36 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
       await reloadMeta()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '删除失败')
+    }
+  }
+
+  const handleAiTag = async (b: BookmarkResponse) => {
+    setAiBusyId(b.id)
+    try {
+      const res = await tagBookmarkWithAi(b.id)
+      const names = res.data || []
+      toast.success(names.length ? `AI 打标成功：${names.join('、')}` : 'AI 未生成标签')
+      await load()
+      await reloadMeta()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'AI 打标失败')
+    } finally {
+      setAiBusyId(null)
+    }
+  }
+
+  const handleBatchAiTag = async () => {
+    if (selected.size === 0) { toast.error('请先勾选书签'); return }
+    setAiBatchBusy(true)
+    try {
+      const res = await tagBatchWithAi([...selected])
+      toast.success(`AI 打标完成：成功 ${res.data.success} 个${res.data.failed ? `，失败 ${res.data.failed} 个` : ''}`)
+      await load()
+      await reloadMeta()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'AI 打标失败')
+    } finally {
+      setAiBatchBusy(false)
     }
   }
 
@@ -247,6 +280,11 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
             className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs transition-colors disabled:opacity-50">
             移除
           </button>
+          <button disabled={aiBatchBusy}
+            onClick={handleBatchAiTag}
+            className="col-span-2 sm:col-span-1 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neon-500/15 hover:bg-neon-500/25 text-neon-300 text-xs transition-colors disabled:opacity-50">
+            <FiCpu size={12} /> AI 打标
+          </button>
           <button disabled={batchBusy}
             onClick={handleBatchArchive}
             className="col-span-2 sm:col-span-1 sm:ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent-600/20 hover:bg-accent-600/30 text-accent-300 text-xs transition-colors disabled:opacity-50">
@@ -313,6 +351,10 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                       <button onClick={() => openEdit(b)} title="编辑"
                         className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
                         <FiEdit2 size={15} />
+                      </button>
+                      <button disabled={aiBusyId === b.id} onClick={() => handleAiTag(b)} title="AI 打标"
+                        className={`p-2 rounded hover:bg-white/10 disabled:opacity-50 ${aiBusyId === b.id ? 'text-neon-400 animate-pulse' : 'text-gray-500 hover:text-neon-400'}`}>
+                        <FiCpu size={15} />
                       </button>
                       <button onClick={() => handleArchive(b)} title="归档"
                         className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
@@ -391,6 +433,10 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                   <button onClick={() => openEdit(b)} title="编辑"
                     className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
                     <FiEdit2 size={16} />
+                  </button>
+                  <button disabled={aiBusyId === b.id} onClick={() => handleAiTag(b)} title="AI 打标"
+                    className={`p-2 rounded hover:bg-white/10 disabled:opacity-50 ${aiBusyId === b.id ? 'text-neon-400 animate-pulse' : 'text-gray-500 hover:text-neon-400'}`}>
+                    <FiCpu size={16} />
                   </button>
                   <button onClick={() => handleArchive(b)} title="归档"
                     className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">

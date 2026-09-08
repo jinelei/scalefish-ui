@@ -74,6 +74,7 @@ export interface TagRequest {
 export interface TagResponse {
   id: number;
   name: string;
+  source?: string;
 }
 
 export interface TagStatsResponse {

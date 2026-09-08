@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FiUser, FiKey, FiSave, FiCheck, FiTrash2, FiShield, FiDownload, FiUpload, FiArchive, FiChrome, FiGlobe, FiRefreshCw, FiPlus, FiX, FiSmartphone, FiClock, FiXCircle } from 'react-icons/fi'
+import { FiUser, FiKey, FiSave, FiCheck, FiTrash2, FiShield, FiDownload, FiUpload, FiArchive, FiChrome, FiGlobe, FiRefreshCw, FiPlus, FiX, FiSmartphone, FiClock, FiXCircle, FiCpu } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { changePassword, updateProfile, setupTotp, verifyTotpSetup, disableTotp } from '../api/auth'
 import { useAuth } from '../contexts/AuthContext'
 import { getAppConfig, updateAppConfig } from '../api/app-config'
 import { exportBackup, importBackup } from '../utils/backup'
 import { batchRefreshFavicons } from '../api/bookmarks'
+import { getAiTaggingConfig, updateAiTaggingConfig, tagPendingWithAi, getAiTaggingStats, type AiTaggingConfig as AiConfig } from '../api/ai-tagging'
 import { listCerts, getCurrentCert, trustCert, deleteCert, type ClientCertResponse, type ParsedCert } from '../api/client-certs'
 import { listDeviceFingerprints, updateDeviceFingerprintStatus, deleteDeviceFingerprint, type DeviceFingerprintResponse, type DeviceTrustStatus } from '../api/device-fingerprints'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -22,6 +23,7 @@ const sections = [
   { id: 'plugin', label: '插件', icon: FiChrome },
   { id: 'brand', label: '品牌', icon: FiGlobe },
   { id: 'favicon', label: '图标刷新', icon: FiRefreshCw },
+  { id: 'ai-tagging', label: 'AI 打标', icon: FiCpu },
   { id: 'certificates', label: '证书', icon: FiShield },
 ]
 
@@ -453,6 +455,137 @@ function FaviconSection() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function AiTaggingSection() {
+  const [cfg, setCfg] = useState<AiConfig | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [running, setRunning] = useState(false)
+  const [stats, setStats] = useState<{ total: number; tagged: number; pending: number } | null>(null)
+
+  const [enabled, setEnabled] = useState(false)
+  const [baseUrl, setBaseUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('')
+  const [maxTags, setMaxTags] = useState(5)
+  const [cron, setCron] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [cfgRes, statsRes] = await Promise.all([getAiTaggingConfig(), getAiTaggingStats()])
+      setCfg(cfgRes.data)
+      setStats(statsRes.data)
+      setEnabled(cfgRes.data.enabled)
+      setBaseUrl(cfgRes.data.baseUrl)
+      setApiKey('')
+      setModel(cfgRes.data.model)
+      setMaxTags(cfgRes.data.maxTags)
+      setCron(cfgRes.data.cron)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '加载 AI 配置失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await updateAiTaggingConfig({
+        enabled,
+        baseUrl,
+        model,
+        maxTags,
+        cron,
+        ...(apiKey ? { apiKey } : {}),
+      })
+      toast.success('AI 打标配置已保存')
+      await load()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRunPending = async () => {
+    setRunning(true)
+    try {
+      const res = await tagPendingWithAi()
+      toast.success(`AI 打标完成：成功 ${res.data.success} 个${res.data.failed ? `，失败 ${res.data.failed} 个` : ''}`)
+      await load()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'AI 打标失败')
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  const inputCls = 'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-accent-500/50 transition-colors'
+  const labelCls = 'block text-xs text-gray-400 mb-1'
+
+  return (
+    <div id="ai-tagging" className="glass rounded-xl p-6 sm:p-8 scroll-mt-20">
+      <SectionHeader icon={FiCpu} title="AI 智能打标" desc="由大模型根据书签标题、网址和描述自动生成标签；可定时对新书签打标" />
+      {loading ? (
+        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-9 bg-white/5 rounded-lg animate-pulse" />)}</div>
+      ) : (
+        <div className="space-y-4">
+          {stats && (
+            <div className="flex flex-wrap gap-4 text-xs text-gray-400 bg-white/5 rounded-lg px-4 py-3">
+              <span>待打标：<b className="text-accent-400">{stats.pending}</b> 个</span>
+              <span>已打标：<b className="text-neon-400">{stats.tagged}</b> 个</span>
+              <span>书签总数：{stats.total} 个</span>
+            </div>
+          )}
+
+          <label className="flex items-center gap-2 text-sm text-gray-200 cursor-pointer">
+            <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="accent-accent-500 w-4 h-4" />
+            启用 AI 打标（含定时任务）
+          </label>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className={labelCls}>服务地址 Base URL（OpenAI 兼容接口）</label>
+              <input className={inputCls} value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://api.openai.com" />
+            </div>
+            <div>
+              <label className={labelCls}>API Key {cfg?.apiKeySet ? '（已配置，留空表示不修改）' : ''}</label>
+              <input type="password" className={inputCls} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder={cfg?.apiKeySet ? '********' : 'sk-...'} autoComplete="off" />
+            </div>
+            <div>
+              <label className={labelCls}>模型名称</label>
+              <input className={inputCls} value={model} onChange={e => setModel(e.target.value)} placeholder="gpt-4o-mini / deepseek-chat / doubao-..." />
+            </div>
+            <div>
+              <label className={labelCls}>每个书签最多标签数</label>
+              <input type="number" min={1} max={20} className={inputCls} value={maxTags} onChange={e => setMaxTags(Number(e.target.value))} />
+            </div>
+            <div>
+              <label className={labelCls}>定时打标 Cron（秒 分 时 日 月 周）</label>
+              <input className={inputCls} value={cron} onChange={e => setCron(e.target.value)} placeholder="0 0 3 * * *" />
+              <p className="text-[11px] text-gray-500 mt-1">默认每天凌晨 3 点处理未打标的新书签；仅在启用时生效</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={handleSave} disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-600 hover:bg-accent-500 disabled:opacity-50 text-white text-xs font-semibold transition-all active:scale-95">
+              <FiSave size={14} /> {saving ? '保存中...' : '保存配置'}
+            </button>
+            <button onClick={handleRunPending} disabled={running}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-neon-600 hover:bg-neon-500 disabled:opacity-50 text-white text-xs font-semibold transition-all active:scale-95">
+              <FiCpu size={14} className={running ? 'animate-pulse' : ''} /> {running ? '打标中...' : '立即打标全部待处理'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -915,6 +1048,7 @@ export default function Settings() {
         <PluginSection />
         <BrandSection />
         <FaviconSection />
+        <AiTaggingSection />
         <CertificatesSection />
       </div>
 
