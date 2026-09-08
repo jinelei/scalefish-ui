@@ -162,10 +162,10 @@ export default function CategoriesTab() {
   return (
     <div>
       {confirmDialog}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs text-gray-500">拖动一个分类到另一个分类上，可把其下全部书签合并过去</p>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <p className="hidden sm:block text-xs text-gray-500 min-w-0 truncate">拖动一个分类到另一个分类上，可把其下全部书签合并过去</p>
         <button onClick={() => openCreate()}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent-500 hover:bg-accent-600 text-white text-sm font-semibold transition-colors">
+          className="flex items-center gap-1.5 shrink-0 whitespace-nowrap px-3.5 py-2 rounded-lg bg-accent-500 hover:bg-accent-600 text-white text-sm font-semibold transition-colors">
           <FiPlus size={14} /> 新建
         </button>
       </div>
