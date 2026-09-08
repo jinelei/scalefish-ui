@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FiBookmark, FiBriefcase, FiUser, FiHeart, FiStar, FiPlayCircle, FiCode, FiTool, FiPackage, FiCompass, FiFolder, FiTag } from 'react-icons/fi'
+import { FiBookmark, FiBriefcase, FiUser, FiHeart, FiStar, FiPlayCircle, FiCode, FiTool, FiPackage, FiCompass, FiFolder, FiTag, FiArchive } from 'react-icons/fi'
 import { getCategoryTree } from '../api/categories'
 import { categoryColor, withAlpha } from '../utils/categoryColor'
 
@@ -8,6 +8,7 @@ const manageItems = [
   { to: '/manage/bookmarks', label: '书签', icon: FiBookmark },
   { to: '/manage/categories', label: '分类', icon: FiFolder },
   { to: '/manage/tags', label: '标签', icon: FiTag },
+  { to: '/manage/archived', label: '已归档', icon: FiArchive },
 ]
 
 interface SecondaryMenuProps {

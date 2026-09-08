@@ -38,6 +38,7 @@ export interface BookmarkResponse {
   description: string | null;
   faviconUrl: string | null;
   pinned: boolean;
+  archived: boolean;
   clickCount: number;
   category: CategoryBrief | null;
   tags: TagResponse[];
@@ -92,8 +93,16 @@ export interface BookmarkSearchParams {
   categoryIds?: number[];
   tagIds?: number[];
   pinned?: boolean;
+  archived?: boolean;
   page?: number;
   size?: number;
+}
+
+export interface ArchiveBookmarkRequest {
+  ids?: number[];
+  categoryIds?: number[];
+  tagIds?: number[];
+  archived: boolean;
 }
 
 export interface LoginRequest {

@@ -1,5 +1,6 @@
 import client from './client';
 import type {
+  ArchiveBookmarkRequest,
   BatchBookmarkRequest,
   BookmarkRequest,
   BookmarkResponse,
@@ -71,5 +72,19 @@ export async function refreshFavicon(
 
 export async function batchRefreshFavicons(): Promise<GenericResult<number>> {
   const res = await client.post('/bookmarks/batch/refresh-favicons');
+  return res.data;
+}
+
+export async function archiveBookmarks(
+  req: ArchiveBookmarkRequest,
+): Promise<GenericResult<number>> {
+  const res = await client.patch('/bookmarks/archive', req);
+  return res.data;
+}
+
+export async function batchDeleteBookmarks(
+  ids: number[],
+): Promise<GenericResult<number>> {
+  const res = await client.post('/bookmarks/batch/delete', { ids });
   return res.data;
 }

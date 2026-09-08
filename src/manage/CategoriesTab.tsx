@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd'
-import { FiPlus, FiEdit2, FiTrash2, FiMove } from 'react-icons/fi'
+import { FiPlus, FiEdit2, FiTrash2, FiMove, FiArchive } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import Modal from '../components/Modal'
 import { useConfirm } from '../components/ConfirmDialog'
 import { getCategoryTree, getCategoryStats, createCategory, updateCategory, deleteCategory, mergeCategories } from '../api/categories'
+import { archiveBookmarks } from '../api/bookmarks'
 import type { CategoryResponse, CategoryStatsResponse } from '../types'
 import { CATEGORY_COLOR_PALETTE, categoryColor, randomCategoryColor, withAlpha } from '../utils/categoryColor'
 
@@ -108,6 +109,24 @@ export default function CategoriesTab() {
     }
   }
 
+  const handleArchive = async (cat: CategoryResponse) => {
+    const count = statsMap.get(cat.id) || 0
+    const ok = await confirm({
+      title: `归档分类书签「${cat.name}」`,
+      message: `将该分类（含所有子分类）下的 ${count} 个未归档书签全部归档？\n\n归档后这些书签不在书签导航、分类、标签中展示，可在「管理-已归档」中恢复或删除。\n分类本身不会被删除。`,
+      confirmText: '归档',
+    })
+    if (!ok) return
+    try {
+      const ids = collectIds(cat)
+      const res = await archiveBookmarks({ categoryIds: ids, archived: true })
+      toast.success(`已归档 ${res.data} 个书签`)
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '归档失败')
+    }
+  }
+
   const onDragEnd = async (result: DropResult) => {
     const { source, destination } = result
     if (!destination || source.index === destination.index) return
@@ -192,6 +211,10 @@ export default function CategoriesTab() {
                             <button onClick={() => openEdit(cat)} title="编辑"
                               className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
                               <FiEdit2 size={13} />
+                            </button>
+                            <button onClick={() => handleArchive(cat)} title="归档此分类下的书签"
+                              className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                              <FiArchive size={13} />
                             </button>
                             <button onClick={() => handleDelete(cat)} title="删除"
                               className="p-1.5 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">

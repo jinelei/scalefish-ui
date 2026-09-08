@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX } from 'react-icons/fi'
+import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiArchive } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { getAllTags, getTagStats, createTag, updateTag, deleteTag } from '../api/tags'
+import { archiveBookmarks } from '../api/bookmarks'
 import { useConfirm } from '../components/ConfirmDialog'
 import type { TagResponse, TagStatsResponse } from '../types'
 
@@ -84,6 +85,23 @@ export default function TagsTab() {
     }
   }
 
+  const handleArchive = async (t: TagResponse) => {
+    const count = countOf(t.id)
+    const ok = await confirm({
+      title: `归档带标签「${t.name}」的书签`,
+      message: `将带有该标签的 ${count} 个未归档书签全部归档？\n\n归档后这些书签不在书签导航、分类、标签中展示，可在「管理-已归档」中恢复或删除。\n标签本身不会被删除。`,
+      confirmText: '归档',
+    })
+    if (!ok) return
+    try {
+      const res = await archiveBookmarks({ tagIds: [t.id], archived: true })
+      toast.success(`已归档 ${res.data} 个书签`)
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '归档失败')
+    }
+  }
+
   if (loading) {
     return <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-black/5 dark:bg-white/5 rounded-lg animate-pulse" />)}</div>
   }
@@ -134,6 +152,10 @@ export default function TagsTab() {
                     <button onClick={() => startEdit(t)} title="重命名"
                       className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
                       <FiEdit2 size={13} />
+                    </button>
+                    <button onClick={() => handleArchive(t)} title="归档带此标签的书签"
+                      className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                      <FiArchive size={13} />
                     </button>
                     <button onClick={() => handleDelete(t)} title="删除"
                       className="p-1.5 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">
