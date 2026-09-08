@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { FiSun, FiMoon, FiMonitor, FiSettings, FiLogOut, FiPlus, FiMenu } from 'react-icons/fi'
+import { FiSun, FiMoon, FiMonitor, FiSettings, FiLogOut, FiPlus, FiMenu, FiBookmark, FiEdit, FiSliders } from 'react-icons/fi'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 import { getAppConfig } from '../api/app-config'
@@ -8,9 +8,9 @@ import { OPEN_CREATE_BOOKMARK_EVENT } from '../events'
 import SecondaryMenu from './SecondaryMenu'
 
 const navLinks = [
-  { to: '/', label: '书签' },
-  { to: '/moments', label: '时刻' },
-  { to: '/settings', label: '设置' },
+  { to: '/', label: '书签', icon: FiBookmark },
+  { to: '/moments', label: '时刻', icon: FiEdit },
+  { to: '/settings', label: '设置', icon: FiSliders },
 ]
 
 export default function Layout() {
@@ -68,7 +68,7 @@ export default function Layout() {
           </span>
         </button>
         <nav className="flex items-center gap-1">
-          {navLinks.map(({ to, label }) => {
+          {navLinks.map(({ to, label, icon: Icon }) => {
             const isActive = to === '/'
               ? isBookmarkMode
               : to === '/moments'
@@ -78,13 +78,15 @@ export default function Layout() {
               <button
                 key={to}
                 onClick={() => navigate(to)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
+                title={label}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
                   isActive
                     ? 'bg-accent-500/10 text-accent-400 font-medium'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                 }`}
               >
-                {label}
+                <Icon size={16} className="shrink-0" />
+                <span className="hidden sm:inline">{label}</span>
               </button>
             )
           })}
