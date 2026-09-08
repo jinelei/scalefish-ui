@@ -29,7 +29,8 @@ function AppRoutes() {
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/" element={<DashboardRoute />} />
         <Route path="/bookmarks/:categoryId" element={<DashboardRoute />} />
-        <Route path="/manage" element={<Manage />} />
+        <Route path="/manage" element={<Navigate to="/manage/bookmarks" replace />} />
+        <Route path="/manage/:tab" element={<Manage />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/settings/:section" element={<Settings />} />
         <Route path="/moments" element={<Moment />} />

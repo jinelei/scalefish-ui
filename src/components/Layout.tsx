@@ -127,7 +127,7 @@ export default function Layout() {
                 </button>
                 {isBookmarkMode && (
                   <button
-                    onClick={() => { setUserMenuOpen(false); navigate('/manage') }}
+                    onClick={() => { setUserMenuOpen(false); navigate('/manage/bookmarks') }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <FiList size={13} />
