@@ -128,13 +128,13 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
   const handleArchive = async (b: BookmarkResponse) => {
     const ok = await confirm({
       title: '归档书签',
-      message: `确定归档书签「${b.title}」吗？归档后将不在书签导航、分类、标签中展示，可在「管理-已归档」中恢复。`,
+      message: `确定归档书签「${b.title}」吗？归档后将不在书签导航、分类、标签中展示，可在「管理-归档」中恢复。`,
       confirmText: '归档',
     })
     if (!ok) return
     try {
       await archiveBookmarks({ ids: [b.id], archived: true })
-      toast.success('已归档')
+      toast.success('归档成功')
       await load()
       await reloadMeta()
     } catch (err) {
@@ -146,14 +146,14 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
     if (selected.size === 0) { toast.error('请先勾选书签'); return }
     const ok = await confirm({
       title: '批量归档',
-      message: `确定归档选中的 ${selected.size} 个书签吗？归档后可在「管理-已归档」中恢复。`,
+      message: `确定归档选中的 ${selected.size} 个书签吗？归档后可在「管理-归档」中恢复。`,
       confirmText: '归档',
     })
     if (!ok) return
     setBatchBusy(true)
     try {
       await archiveBookmarks({ ids: [...selected], archived: true })
-      toast.success('已归档')
+      toast.success('归档成功')
       await load()
       await reloadMeta()
     } catch (err) {

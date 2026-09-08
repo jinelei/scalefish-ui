@@ -8,7 +8,7 @@ const manageItems = [
   { to: '/manage/bookmarks', label: '书签', icon: FiBookmark },
   { to: '/manage/categories', label: '分类', icon: FiFolder },
   { to: '/manage/tags', label: '标签', icon: FiTag },
-  { to: '/manage/archived', label: '已归档', icon: FiArchive },
+  { to: '/manage/archived', label: '归档', icon: FiArchive },
 ]
 
 interface SecondaryMenuProps {

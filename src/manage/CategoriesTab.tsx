@@ -113,14 +113,14 @@ export default function CategoriesTab() {
     const count = statsMap.get(cat.id) || 0
     const ok = await confirm({
       title: `归档分类书签「${cat.name}」`,
-      message: `将该分类（含所有子分类）下的 ${count} 个未归档书签全部归档？\n\n归档后这些书签不在书签导航、分类、标签中展示，可在「管理-已归档」中恢复或删除。\n分类本身不会被删除。`,
+      message: `将该分类（含所有子分类）下的 ${count} 个未归档书签全部归档？\n\n归档后这些书签不在书签导航、分类、标签中展示，可在「管理-归档」中恢复或删除。\n分类本身不会被删除。`,
       confirmText: '归档',
     })
     if (!ok) return
     try {
       const ids = collectIds(cat)
       const res = await archiveBookmarks({ categoryIds: ids, archived: true })
-      toast.success(`已归档 ${res.data} 个书签`)
+      toast.success(`成功归档 ${res.data} 个书签`)
       await load()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '归档失败')
@@ -165,17 +165,17 @@ export default function CategoriesTab() {
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs text-gray-500">拖动一个分类到另一个分类上，可把其下全部书签合并过去</p>
         <button onClick={() => openCreate()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-500 hover:bg-accent-600 text-white text-xs font-semibold transition-colors">
-          <FiPlus size={13} /> 新建分类
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent-500 hover:bg-accent-600 text-white text-sm font-semibold transition-colors">
+          <FiPlus size={14} /> 新建分类
         </button>
       </div>
 
       {loading ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-10 bg-black/5 dark:bg-white/5 rounded-lg animate-pulse" />)}
+        <div className="space-y-2.5">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-black/5 dark:bg-white/5 rounded-lg animate-pulse" />)}
         </div>
       ) : flat.length === 0 ? (
-        <div className="text-center py-10 text-xs text-gray-500">暂无分类，点击右上角创建</div>
+        <div className="text-center py-12 text-sm text-gray-500">暂无分类，点击右上角创建</div>
       ) : (
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="categories">
@@ -192,33 +192,33 @@ export default function CategoriesTab() {
                           {...dragProvided.draggableProps}
                           {...dragProvided.dragHandleProps}
                           style={{ marginLeft: `${item.depth * 20}px`, ...dragProvided.draggableProps.style }}
-                          className={`group flex items-center gap-2 rounded-lg border px-3 py-2 mb-1.5 transition-colors ${
+                          className={`group flex items-center gap-3 rounded-lg border px-4 py-3 mb-2.5 transition-colors ${
                             snapshot.isDragging ? 'border-accent-500/50 bg-accent-500/10' : 'border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] hover:border-accent-500/30'
                           } ${mergeTarget?.id === cat.id ? 'ring-2 ring-emerald-500/50' : ''}`}
                         >
-                          <FiMove size={13} className="text-gray-500 cursor-grab active:cursor-grabbing shrink-0" />
+                          <FiMove size={16} className="text-gray-500 cursor-grab active:cursor-grabbing shrink-0" />
                           <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white/10"
+                            className="w-3 h-3 rounded-full shrink-0 ring-2 ring-white/10"
                             style={{ backgroundColor: categoryColor(cat.color) }}
                           />
-                          <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{cat.name}</span>
-                          <span className="text-[10px] text-gray-500 shrink-0">{count} 个书签</span>
-                          <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[15px] text-gray-800 dark:text-gray-100 font-medium truncate">{cat.name}</span>
+                          <span className="text-xs text-gray-500 shrink-0">{count} 个书签</span>
+                          <div className="ml-auto flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => openCreate(cat)} title="添加子分类"
-                              className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
-                              <FiPlus size={13} />
+                              className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                              <FiPlus size={15} />
                             </button>
                             <button onClick={() => openEdit(cat)} title="编辑"
-                              className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
-                              <FiEdit2 size={13} />
+                              className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                              <FiEdit2 size={15} />
                             </button>
                             <button onClick={() => handleArchive(cat)} title="归档此分类下的书签"
-                              className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
-                              <FiArchive size={13} />
+                              className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                              <FiArchive size={15} />
                             </button>
                             <button onClick={() => handleDelete(cat)} title="删除"
-                              className="p-1.5 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">
-                              <FiTrash2 size={13} />
+                              className="p-2 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">
+                              <FiTrash2 size={15} />
                             </button>
                           </div>
                         </div>
