@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getAppConfig, updateAppConfig } from '../api/app-config'
 import { exportBackup, importBackup } from '../utils/backup'
 import { batchRefreshFavicons } from '../api/bookmarks'
-import { getAiTaggingConfig, updateAiTaggingConfig, tagPendingWithAi, getAiTaggingStats, type AiTaggingConfig as AiConfig } from '../api/ai-tagging'
+import { getAiTaggingConfig, updateAiTaggingConfig, tagPendingWithAiStream, getAiTaggingStats, type AiTaggingConfig as AiConfig } from '../api/ai-tagging'
 import { listCerts, getCurrentCert, trustCert, deleteCert, type ClientCertResponse, type ParsedCert } from '../api/client-certs'
 import { listDeviceFingerprints, updateDeviceFingerprintStatus, deleteDeviceFingerprint, type DeviceFingerprintResponse, type DeviceTrustStatus } from '../api/device-fingerprints'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -464,6 +464,7 @@ function AiTaggingSection() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [running, setRunning] = useState(false)
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [stats, setStats] = useState<{ total: number; tagged: number; pending: number } | null>(null)
 
   const [enabled, setEnabled] = useState(false)
@@ -516,14 +517,27 @@ function AiTaggingSection() {
 
   const handleRunPending = async () => {
     setRunning(true)
+    setProgress(null)
+    const outcome: { value: { success: number; failed: number } | null } = { value: null }
     try {
-      const res = await tagPendingWithAi()
-      toast.success(`AI 打标完成：成功 ${res.data.success} 个${res.data.failed ? `，失败 ${res.data.failed} 个` : ''}`)
-      await load()
+      await tagPendingWithAiStream({
+        onStart: (total) => setProgress({ done: 0, total }),
+        onProgress: ({ index, total }) => setProgress({ done: index, total }),
+        onDone: (e) => {
+          if (e.result) outcome.value = { success: e.result.success, failed: e.result.failed }
+        },
+        onError: (msg) => toast.error(msg),
+      })
+      if (outcome.value) {
+        const { success, failed } = outcome.value
+        toast.success(`AI 打标完成：成功 ${success} 个${failed ? `，失败 ${failed} 个` : ''}`)
+        await load()
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'AI 打标失败')
     } finally {
       setRunning(false)
+      setProgress(null)
     }
   }
 
@@ -581,7 +595,11 @@ function AiTaggingSection() {
             </button>
             <button onClick={handleRunPending} disabled={running}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-neon-600 hover:bg-neon-500 disabled:opacity-50 text-white text-xs font-semibold transition-all active:scale-95">
-              <FiCpu size={14} className={running ? 'animate-pulse' : ''} /> {running ? '打标中...' : '立即打标全部待处理'}
+              <FiCpu size={14} className={running ? 'animate-pulse' : ''} /> {
+                running
+                  ? (progress ? `打标中 ${progress.done}/${progress.total}` : '启动中...')
+                  : '立即打标全部待处理'
+              }
             </button>
           </div>
         </div>

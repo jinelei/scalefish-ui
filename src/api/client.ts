@@ -8,6 +8,10 @@ let currentAccessToken: string | null = null
 let accessTokenGetter: () => string | null = () => null
 let setAccessToken: (token: string | null) => void = () => {}
 
+export function getAccessToken(): string | null {
+  return currentAccessToken ?? accessTokenGetter()
+}
+
 export function setAuthTokenAccessor(getter: () => string | null, setter: (token: string | null) => void) {
   accessTokenGetter = getter
   setAccessToken = (token) => {

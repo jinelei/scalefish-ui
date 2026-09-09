@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { FiSearch, FiEdit2, FiTrash2, FiPlus, FiExternalLink, FiArchive, FiCpu } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { searchBookmarks, deleteBookmark, batchUpdateBookmarks, archiveBookmarks } from '../api/bookmarks'
-import { tagBookmarkWithAi, tagBatchWithAi } from '../api/ai-tagging'
+import { tagBookmarkWithAiStream, tagBatchWithAiStream } from '../api/ai-tagging'
 import type { BookmarkResponse, CategoryResponse, TagResponse } from '../types'
 import BookmarkEditModal, { flattenCategories } from './BookmarkEditModal'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -130,31 +130,62 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
 
   const handleAiTag = async (b: BookmarkResponse) => {
     setAiBusyId(b.id)
+    const state: { finished: boolean } = { finished: false }
     try {
-      const res = await tagBookmarkWithAi(b.id)
-      const names = res.data || []
-      toast.success(names.length ? `AI 打标成功：${names.join('、')}` : 'AI 未生成标签')
-      await load()
-      await reloadMeta()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'AI 打标失败')
+      await tagBookmarkWithAiStream(b.id, {
+        onDone: (e) => {
+          state.finished = true
+          const names = e.tags ?? []
+          toast.success(names.length ? `AI 打标成功：${names.join('、')}` : 'AI 未生成标签')
+        },
+        onError: (msg) => {
+          state.finished = true
+          toast.error(msg)
+        },
+      })
+      if (state.finished) {
+        await load()
+        await reloadMeta()
+      }
+    } catch {
+      toast.error('AI 打标失败')
     } finally {
       setAiBusyId(null)
     }
   }
 
+  const [aiProgress, setAiProgress] = useState<{ done: number; total: number } | null>(null)
+
   const handleBatchAiTag = async () => {
     if (selected.size === 0) { toast.error('请先勾选书签'); return }
+    const ids = [...selected]
     setAiBatchBusy(true)
+    setAiProgress({ done: 0, total: ids.length })
+    const outcome: { value: { success: number; failed: number } | null } = { value: null }
     try {
-      const res = await tagBatchWithAi([...selected])
-      toast.success(`AI 打标完成：成功 ${res.data.success} 个${res.data.failed ? `，失败 ${res.data.failed} 个` : ''}`)
-      await load()
-      await reloadMeta()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'AI 打标失败')
+      await tagBatchWithAiStream(ids, {
+        onStart: (total) => setAiProgress({ done: 0, total }),
+        onProgress: ({ index, total }) => {
+          setAiProgress({ done: index, total })
+        },
+        onDone: (e) => {
+          if (e.result) outcome.value = { success: e.result.success, failed: e.result.failed }
+        },
+        onError: (msg) => toast.error(msg),
+      })
+      if (outcome.value) {
+        const { success, failed } = outcome.value
+        toast.success(
+          `AI 打标完成：成功 ${success} 个${failed ? `，失败 ${failed} 个` : ''}`,
+        )
+        await load()
+        await reloadMeta()
+      }
+    } catch {
+      toast.error('AI 打标失败')
     } finally {
       setAiBatchBusy(false)
+      setAiProgress(null)
     }
   }
 
@@ -283,7 +314,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
           <button disabled={aiBatchBusy}
             onClick={handleBatchAiTag}
             className="col-span-2 sm:col-span-1 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neon-500/15 hover:bg-neon-500/25 text-neon-300 text-xs transition-colors disabled:opacity-50">
-            <FiCpu size={12} /> AI 打标
+            <FiCpu size={12} /> {aiProgress ? `AI 打标 ${aiProgress.done}/${aiProgress.total}` : 'AI 打标'}
           </button>
           <button disabled={batchBusy}
             onClick={handleBatchArchive}
