@@ -333,8 +333,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                 <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll} className="accent-accent-500" />
               </th>
               <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs">书签</th>
-              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-32">分类</th>
-              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-40">标签</th>
+              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-28">分类</th>
               <th className="text-center py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-36">操作</th>
             </tr>
           </thead>
@@ -342,11 +341,11 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
             {loading ? (
               [...Array(8)].map((_, i) => (
                 <tr key={i} className="border-b border-black/5 dark:border-white/5">
-                  <td colSpan={5} className="py-4 px-3"><div className="h-6 bg-black/5 dark:bg-white/5 rounded animate-pulse" /></td>
+                  <td colSpan={4} className="py-4 px-3"><div className="h-6 bg-black/5 dark:bg-white/5 rounded animate-pulse" /></td>
                 </tr>
               ))
             ) : bookmarks.length === 0 ? (
-              <tr><td colSpan={5} className="py-12 text-center text-sm text-gray-500">没有匹配的书签</td></tr>
+              <tr><td colSpan={4} className="py-12 text-center text-sm text-gray-500">没有匹配的书签</td></tr>
             ) : (
               bookmarks.map(b => (
                 <tr key={b.id} className={`border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] ${selected.has(b.id) ? 'bg-accent-500/5' : ''}`}>
@@ -354,9 +353,9 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                     <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggleSelect(b.id)} className="accent-accent-500" />
                   </td>
                   <td className="py-4 px-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img src={b.faviconUrl || DEFAULT_FAVICON} alt="" className="w-5 h-5 rounded shrink-0" />
-                      <div className="min-w-0">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <img src={b.faviconUrl || DEFAULT_FAVICON} alt="" className="w-5 h-5 rounded shrink-0 mt-0.5" />
+                      <div className="min-w-0 flex-1">
                         <div className="truncate text-sm text-gray-800 dark:text-gray-100 font-medium leading-6" title={b.title}>{b.title}</div>
                         <a href={b.url} target="_blank" rel="noreferrer"
                           className="flex items-center gap-1.5 min-w-0 text-xs text-gray-500 hover:text-accent-400 truncate mt-0.5"
@@ -364,18 +363,18 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                           <FiExternalLink size={11} className="shrink-0" />
                           <span className="truncate">{b.url}</span>
                         </a>
+                        {b.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {b.tags.map(t => (
+                              <span key={t.id} className="px-2 py-0.5 rounded bg-neon-500/10 text-neon-400 text-xs whitespace-nowrap">{t.name}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td className="py-4 px-3 truncate text-sm text-gray-600 dark:text-gray-400" title={b.category?.name}>
                     {b.category?.name || <span className="text-gray-500">未分类</span>}
-                  </td>
-                  <td className="py-4 px-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {b.tags.map(t => (
-                        <span key={t.id} className="px-2 py-0.5 rounded bg-neon-500/10 text-neon-400 text-xs whitespace-nowrap">{t.name}</span>
-                      ))}
-                    </div>
                   </td>
                   <td className="py-4 px-3">
                     <div className="flex items-center justify-center gap-1">
