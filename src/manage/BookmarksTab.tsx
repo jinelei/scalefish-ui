@@ -324,8 +324,8 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
         </div>
       )}
 
-      {/* 书签表格（桌面端） */}
-      <div className="hidden sm:block overflow-x-auto rounded-lg border border-black/5 dark:border-white/5">
+      {/* 书签表格（桌面端）：列宽固定、超长内容省略，不出现横向滚动条 */}
+      <div className="hidden sm:block overflow-x-hidden rounded-lg border border-black/5 dark:border-white/5">
         <table className="w-full text-sm table-fixed">
           <thead>
             <tr className="border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
@@ -333,9 +333,9 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                 <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll} className="accent-accent-500" />
               </th>
               <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs">书签</th>
-              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-36">分类</th>
-              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-48">标签</th>
-              <th className="text-center py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-28">操作</th>
+              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-32">分类</th>
+              <th className="text-left py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-40">标签</th>
+              <th className="text-center py-3 px-3 text-gray-500 dark:text-gray-400 font-medium text-xs w-36">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -359,7 +359,7 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                       <div className="min-w-0">
                         <div className="truncate text-sm text-gray-800 dark:text-gray-100 font-medium leading-6" title={b.title}>{b.title}</div>
                         <a href={b.url} target="_blank" rel="noreferrer"
-                          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-accent-400 truncate mt-0.5"
+                          className="flex items-center gap-1.5 min-w-0 text-xs text-gray-500 hover:text-accent-400 truncate mt-0.5"
                           onClick={e => e.stopPropagation()}>
                           <FiExternalLink size={11} className="shrink-0" />
                           <span className="truncate">{b.url}</span>
@@ -378,22 +378,22 @@ export default function BookmarksTab({ categories, allTags, reloadMeta }: Props)
                     </div>
                   </td>
                   <td className="py-4 px-3">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1">
                       <button onClick={() => openEdit(b)} title="编辑"
-                        className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
-                        <FiEdit2 size={15} />
+                        className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                        <FiEdit2 size={14} />
                       </button>
                       <button disabled={aiBusyId === b.id} onClick={() => handleAiTag(b)} title="AI 打标"
-                        className={`p-2 rounded hover:bg-white/10 disabled:opacity-50 ${aiBusyId === b.id ? 'text-neon-400 animate-pulse' : 'text-gray-500 hover:text-neon-400'}`}>
-                        <FiCpu size={15} />
+                        className={`p-1.5 rounded hover:bg-white/10 disabled:opacity-50 ${aiBusyId === b.id ? 'text-neon-400 animate-pulse' : 'text-gray-500 hover:text-neon-400'}`}>
+                        <FiCpu size={14} />
                       </button>
                       <button onClick={() => handleArchive(b)} title="归档"
-                        className="p-2 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
-                        <FiArchive size={15} />
+                        className="p-1.5 rounded text-gray-500 hover:text-accent-400 hover:bg-white/10">
+                        <FiArchive size={14} />
                       </button>
                       <button onClick={() => handleDelete(b)} title="删除"
-                        className="p-2 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">
-                        <FiTrash2 size={15} />
+                        className="p-1.5 rounded text-gray-500 hover:text-rose-400 hover:bg-white/10">
+                        <FiTrash2 size={14} />
                       </button>
                     </div>
                   </td>
