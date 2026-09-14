@@ -125,12 +125,36 @@ export interface RegistrationStatus {
   allowRegistration: boolean;
 }
 
+export type UserRole = 'ROLE_ADMIN' | 'ROLE_USER'
+
 export interface UserInfo {
   id: number;
   username: string;
   name: string | null;
   email: string | null;
   totpEnabled?: boolean;
+  role?: UserRole | string;
+  enabled?: boolean;
+}
+
+export interface AdminUserResponse {
+  id: number
+  username: string
+  name: string | null
+  email: string | null
+  role: string
+  enabled: boolean
+  totpEnabled: boolean
+  createdAt: string | null
+  lastLoginAt: string | null
+}
+
+export interface CreateUserRequest {
+  username: string
+  password: string
+  name?: string
+  email?: string
+  role?: string
 }
 
 export interface DailyCount {

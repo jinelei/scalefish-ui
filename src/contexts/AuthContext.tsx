@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (username: string, password: string, totpCode?: string, rememberMe?: boolean, fingerprint?: Record<string, string>) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  isAdmin: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -86,6 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }, [])
 
+  const isAdmin = user?.role === 'ROLE_ADMIN'
+
   const login = useCallback(async (username: string, password: string, totpCode?: string, rememberMe?: boolean, fingerprint?: Record<string, string>) => {
     log.info('Logging in: username=%s', username)
     const res = await loginApi({ username, password, totpCode, rememberMe, fingerprint })
@@ -95,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setAuthData])
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, login, logout, refreshUser, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

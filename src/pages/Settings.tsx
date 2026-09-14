@@ -1,11 +1,10 @@
 import { useParams, Navigate } from 'react-router-dom'
 import AccountSettings from '../settings/AccountSettings'
 import SystemSettings from '../settings/SystemSettings'
-import DataSettings from '../settings/DataSettings'
 
-type TabKey = 'account' | 'system' | 'data'
+type TabKey = 'account' | 'system'
 
-const tabs = new Set<TabKey>(['account', 'system', 'data'])
+const tabs = new Set<TabKey>(['account', 'system'])
 
 export default function Settings() {
   const { section } = useParams()
@@ -17,7 +16,6 @@ export default function Settings() {
     <div className="p-4 sm:p-6">
       {current === 'account' && <AccountSettings />}
       {current === 'system' && <SystemSettings />}
-      {current === 'data' && <DataSettings />}
     </div>
   )
 }

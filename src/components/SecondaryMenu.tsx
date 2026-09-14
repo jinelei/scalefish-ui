@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FiBookmark, FiBriefcase, FiUser, FiHeart, FiStar, FiPlayCircle, FiCode, FiTool, FiPackage, FiCompass, FiFolder, FiTag, FiArchive, FiSettings, FiDatabase, FiSliders } from 'react-icons/fi'
+import { FiBookmark, FiBriefcase, FiUser, FiHeart, FiStar, FiPlayCircle, FiCode, FiTool, FiPackage, FiCompass, FiFolder, FiTag, FiArchive, FiSettings, FiSliders, FiUsers } from 'react-icons/fi'
 import { getCategoryTree } from '../api/categories'
 import { categoryColor, withAlpha } from '../utils/categoryColor'
+import { useAuth } from '../contexts/AuthContext'
 
-const manageItems = [
+const baseManageItems = [
   { to: '/manage/bookmarks', label: '书签', icon: FiBookmark },
   { to: '/manage/categories', label: '分类', icon: FiFolder },
   { to: '/manage/tags', label: '标签', icon: FiTag },
@@ -14,7 +15,6 @@ const manageItems = [
 const settingsItems = [
   { to: '/settings/account', label: '用户配置', icon: FiUser },
   { to: '/settings/system', label: '系统配置', icon: FiSliders },
-  { to: '/settings/data', label: '数据管理', icon: FiDatabase },
 ]
 
 interface SecondaryMenuProps {
@@ -58,6 +58,10 @@ function MenuItem({ item, location }: {
 
 export default function SecondaryMenu({ open, onClose }: SecondaryMenuProps) {
   const location = useLocation()
+  const { isAdmin } = useAuth()
+  const manageItems = isAdmin
+    ? [...baseManageItems, { to: '/manage/users', label: '用户', icon: FiUsers }]
+    : baseManageItems
   const [categoryList, setCategoryList] = useState<{ id: number; name: string; color?: string | null }[]>([])
 
   const loadCategories = useCallback(() => {

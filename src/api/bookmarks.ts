@@ -63,18 +63,6 @@ export async function batchUpdateBookmarks(
   return res.data;
 }
 
-export async function refreshFavicon(
-  id: number,
-): Promise<GenericResult<BookmarkResponse>> {
-  const res = await client.post(`/bookmarks/${id}/refresh-favicon`);
-  return res.data;
-}
-
-export async function batchRefreshFavicons(): Promise<GenericResult<number>> {
-  const res = await client.post('/bookmarks/batch/refresh-favicons');
-  return res.data;
-}
-
 export async function archiveBookmarks(
   req: ArchiveBookmarkRequest,
 ): Promise<GenericResult<number>> {
