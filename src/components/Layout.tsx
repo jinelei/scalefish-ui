@@ -37,7 +37,8 @@ export default function Layout() {
   const isBookmarkMode = location.pathname === '/'
     || location.pathname.startsWith('/bookmarks/')
     || location.pathname.startsWith('/manage')
-  const hasSecondaryMenu = isBookmarkMode
+  const isSettingsMode = location.pathname.startsWith('/settings')
+  const hasSecondaryMenu = isBookmarkMode || isSettingsMode
 
   const closeSecondary = useCallback(() => setSecondaryOpen(false), [])
 

@@ -75,8 +75,3 @@ export async function verifyTotpLogin(totpToken: string, code: string): Promise<
   const res = await client.post('/auth/totp/verify-login', { totpToken, code })
   return res.data
 }
-
-export async function certStatus(): Promise<GenericResult<{ available: boolean }>> {
-  const res = await client.get('/auth/cert-status')
-  return res.data
-}

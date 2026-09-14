@@ -10,7 +10,7 @@ interface AuthContextType {
   user: UserInfo | null
   accessToken: string | null
   loading: boolean
-  login: (username?: string, password?: string, totpCode?: string, rememberMe?: boolean, fingerprint?: Record<string, string>) => Promise<void>
+  login: (username: string, password: string, totpCode?: string, rememberMe?: boolean, fingerprint?: Record<string, string>) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -86,10 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }, [])
 
-  const login = useCallback(async (username?: string, password?: string, totpCode?: string, rememberMe?: boolean, fingerprint?: Record<string, string>) => {
-    const isCertLogin = !username && !password
-    log.info('Logging in: %s', isCertLogin ? 'certificate' : 'username=' + username)
-    const res = await loginApi({ username: username || '', password: password || '', totpCode, rememberMe, fingerprint })
+  const login = useCallback(async (username: string, password: string, totpCode?: string, rememberMe?: boolean, fingerprint?: Record<string, string>) => {
+    log.info('Logging in: username=%s', username)
+    const res = await loginApi({ username, password, totpCode, rememberMe, fingerprint })
     const { accessToken: at, user: u } = res.data
     setAuthData({ accessToken: at, user: u })
     log.info('Login success: userId=%d', u.id)

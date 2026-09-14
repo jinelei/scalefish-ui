@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { FiBookmark, FiBriefcase, FiUser, FiHeart, FiStar, FiPlayCircle, FiCode, FiTool, FiPackage, FiCompass, FiFolder, FiTag, FiArchive } from 'react-icons/fi'
+import { FiBookmark, FiBriefcase, FiUser, FiHeart, FiStar, FiPlayCircle, FiCode, FiTool, FiPackage, FiCompass, FiFolder, FiTag, FiArchive, FiSettings, FiDatabase, FiSliders } from 'react-icons/fi'
 import { getCategoryTree } from '../api/categories'
 import { categoryColor, withAlpha } from '../utils/categoryColor'
 
@@ -9,6 +9,12 @@ const manageItems = [
   { to: '/manage/categories', label: '分类', icon: FiFolder },
   { to: '/manage/tags', label: '标签', icon: FiTag },
   { to: '/manage/archived', label: '归档', icon: FiArchive },
+]
+
+const settingsItems = [
+  { to: '/settings/account', label: '用户配置', icon: FiUser },
+  { to: '/settings/system', label: '系统配置', icon: FiSliders },
+  { to: '/settings/data', label: '数据管理', icon: FiDatabase },
 ]
 
 interface SecondaryMenuProps {
@@ -30,6 +36,26 @@ function categoryIcon(name: string) {
   }
 }
 
+function MenuItem({ item, location }: {
+  item: { to: string; label: string; icon: React.ComponentType<{ size?: number }> }
+  location: ReturnType<typeof useLocation>
+}) {
+  const active = location.pathname.startsWith(item.to)
+  return (
+    <NavLink
+      to={item.to}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+        active
+          ? 'bg-accent-500/10 text-accent-400 font-medium'
+          : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+      }`}
+    >
+      <item.icon size={15} />
+      {item.label}
+    </NavLink>
+  )
+}
+
 export default function SecondaryMenu({ open, onClose }: SecondaryMenuProps) {
   const location = useLocation()
   const [categoryList, setCategoryList] = useState<{ id: number; name: string; color?: string | null }[]>([])
@@ -49,6 +75,7 @@ export default function SecondaryMenu({ open, onClose }: SecondaryMenuProps) {
   }, [location.pathname, onClose])
 
   const isNavActive = location.pathname === '/' || location.pathname.startsWith('/bookmarks/')
+  const isSettings = location.pathname.startsWith('/settings')
 
   return (
     <>
@@ -64,69 +91,68 @@ export default function SecondaryMenu({ open, onClose }: SecondaryMenuProps) {
         }`}
       >
         <nav className="h-full overflow-y-auto py-4 px-3 space-y-0.5">
-          <div className="px-3 py-1.5 text-[11px] font-medium text-gray-600 uppercase tracking-wider">
-            浏览
-          </div>
-          <NavLink
-            to="/"
-            end
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-              isNavActive
-                ? 'bg-accent-500/10 text-accent-400 font-medium'
-                : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
-            }`}
-          >
-            <FiCompass size={15} />
-            导航
-          </NavLink>
-
-          {isNavActive && categoryList.length > 0 && (
-            <div className="ml-2 mt-0.5 space-y-0.5 border-l border-white/5 pl-2">
-              {categoryList.map(cat => {
-                const CatIcon = categoryIcon(cat.name)
-                const catColor = categoryColor(cat.color)
-                const active = location.pathname === `/bookmarks/${cat.id}`
-                return (
-                  <NavLink
-                    key={cat.id}
-                    to={`/bookmarks/${cat.id}`}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                      active ? '' : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
-                    }`}
-                    style={active
-                      ? { backgroundColor: withAlpha(catColor, 0.12), color: catColor, fontWeight: 500 }
-                      : undefined}
-                  >
-                    <span style={{ color: catColor }} className="opacity-80 shrink-0">
-                      <CatIcon size={15} />
-                    </span>
-                    <span className="truncate">{cat.name}</span>
-                  </NavLink>
-                )
-              })}
-            </div>
-          )}
-
-          <div className="px-3 pt-4 pb-1.5 text-[11px] font-medium text-gray-600 uppercase tracking-wider">
-            管理
-          </div>
-          {manageItems.map(item => {
-            const active = location.pathname.startsWith(item.to)
-            return (
+          {isSettings ? (
+            <>
+              <div className="px-3 py-1.5 text-[11px] font-medium text-gray-600 uppercase tracking-wider">
+                <span className="inline-flex items-center gap-2"><FiSettings size={12} /> 设置</span>
+              </div>
+              {settingsItems.map(item => (
+                <MenuItem key={item.to} item={item} location={location} />
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="px-3 py-1.5 text-[11px] font-medium text-gray-600 uppercase tracking-wider">
+                浏览
+              </div>
               <NavLink
-                key={item.to}
-                to={item.to}
+                to="/"
+                end
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                  active
+                  isNavActive
                     ? 'bg-accent-500/10 text-accent-400 font-medium'
                     : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
                 }`}
               >
-                <item.icon size={15} />
-                {item.label}
+                <FiCompass size={15} />
+                导航
               </NavLink>
-            )
-          })}
+
+              {isNavActive && categoryList.length > 0 && (
+                <div className="ml-2 mt-0.5 space-y-0.5 border-l border-white/5 pl-2">
+                  {categoryList.map(cat => {
+                    const CatIcon = categoryIcon(cat.name)
+                    const catColor = categoryColor(cat.color)
+                    const active = location.pathname === `/bookmarks/${cat.id}`
+                    return (
+                      <NavLink
+                        key={cat.id}
+                        to={`/bookmarks/${cat.id}`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                          active ? '' : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+                        }`}
+                        style={active
+                          ? { backgroundColor: withAlpha(catColor, 0.12), color: catColor, fontWeight: 500 }
+                          : undefined}
+                      >
+                        <span style={{ color: catColor }} className="opacity-80 shrink-0">
+                          <CatIcon size={15} />
+                        </span>
+                        <span className="truncate">{cat.name}</span>
+                      </NavLink>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div className="px-3 pt-4 pb-1.5 text-[11px] font-medium text-gray-600 uppercase tracking-wider">
+                管理
+              </div>
+              {manageItems.map(item => (
+                <MenuItem key={item.to} item={item} location={location} />
+              ))}
+            </>
+          )}
         </nav>
       </aside>
     </>
