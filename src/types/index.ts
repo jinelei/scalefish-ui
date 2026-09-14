@@ -157,6 +157,13 @@ export interface CreateUserRequest {
   role?: string
 }
 
+export interface UpdateUserRequest {
+  username: string
+  name?: string
+  email?: string
+  role: string
+}
+
 export interface DailyCount {
   date: string;
   count: number;
