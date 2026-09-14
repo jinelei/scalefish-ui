@@ -14,7 +14,7 @@ export default function Settings() {
   if (!current) return <Navigate to="/settings/account" replace />
 
   return (
-    <div>
+    <div className="p-4 sm:p-6">
       {current === 'account' && <AccountSettings />}
       {current === 'system' && <SystemSettings />}
       {current === 'data' && <DataSettings />}
