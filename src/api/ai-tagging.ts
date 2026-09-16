@@ -4,11 +4,6 @@ import type { GenericResult } from '../types';
 
 export interface AiTaggingConfig {
   enabled: boolean;
-  baseUrl: string;
-  apiKey: string;
-  apiKeySet: boolean;
-  model: string;
-  maxTags: number;
   cron: string;
 }
 
@@ -27,10 +22,6 @@ export interface AiTagResult {
 
 export interface AiTaggingConfigPayload {
   enabled?: boolean;
-  baseUrl?: string;
-  apiKey?: string;
-  model?: string;
-  maxTags?: number;
   cron?: string;
 }
 

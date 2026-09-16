@@ -2,9 +2,9 @@ import client from './client'
 import type { AuthResponse, LoginRequest, UserInfo, RegistrationStatus, GenericResult } from '../types'
 import { encryptPassword } from '../utils/crypto'
 
-export async function login(req: LoginRequest & { totpCode?: string; rememberMe?: boolean; fingerprint?: Record<string, string> }): Promise<GenericResult<AuthResponse>> {
+export async function login(req: LoginRequest & { totpCode?: string; rememberMe?: boolean; fingerprint?: Record<string, string>; deviceName?: string }): Promise<GenericResult<AuthResponse>> {
   const encryptedPassword = await encryptPassword(req.password)
-  const body: Record<string, unknown> = { username: req.username, encryptedPassword, rememberMe: !!req.rememberMe }
+  const body: Record<string, unknown> = { username: req.username, encryptedPassword, rememberMe: !!req.rememberMe, deviceName: req.deviceName }
   if (req.totpCode) body.totpCode = req.totpCode
   if (req.fingerprint) body.fingerprint = req.fingerprint
   const res = await client.post('/auth/login', body)

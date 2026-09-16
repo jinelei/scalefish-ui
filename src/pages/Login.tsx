@@ -4,7 +4,7 @@ import { FiShield, FiAlertOctagon } from 'react-icons/fi'
 import { useAuth } from '../contexts/AuthContext'
 import { getRegistrationStatus } from '../api/auth'
 import { loginCheck, type LoginCheckResult } from '../api/device-fingerprints'
-import { collectFingerprintFeatures } from '../utils/fingerprint'
+import { collectFingerprintFeatures, getDeviceName } from '../utils/fingerprint'
 import { createLogger } from '../utils/logger'
 
 const log = createLogger('Login')
@@ -94,7 +94,7 @@ export default function Login() {
     setError('')
     try {
       const fingerprint = collectFingerprintFeatures()
-      await login(username, password, totpCode.trim() || undefined, rememberMe, fingerprint)
+      await login(username, password, totpCode.trim() || undefined, rememberMe, fingerprint, getDeviceName())
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
     } finally {

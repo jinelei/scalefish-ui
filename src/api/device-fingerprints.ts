@@ -9,6 +9,7 @@ export interface DeviceFingerprintResponse {
   fingerprintSha256: string
   trustStatus: DeviceTrustStatus
   userAgent: string | null
+  deviceName: string | null
   platform: string | null
   language: string | null
   timezone: string | null

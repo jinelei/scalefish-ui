@@ -12,7 +12,7 @@ const baseManageItems = [
   { to: '/manage/archived', label: '归档', icon: FiArchive },
 ]
 
-const settingsItems = [
+const baseSettingsItems = [
   { to: '/settings/account', label: '用户配置', icon: FiUser },
   { to: '/settings/system', label: '系统配置', icon: FiSliders },
 ]
@@ -59,9 +59,10 @@ function MenuItem({ item, location }: {
 export default function SecondaryMenu({ open, onClose }: SecondaryMenuProps) {
   const location = useLocation()
   const { isAdmin } = useAuth()
-  const manageItems = isAdmin
-    ? [...baseManageItems, { to: '/manage/users', label: '用户', icon: FiUsers }]
-    : baseManageItems
+  const manageItems = baseManageItems
+  const settingsItems = isAdmin
+    ? [...baseSettingsItems, { to: '/settings/users', label: '用户管理', icon: FiUsers }]
+    : baseSettingsItems
   const [categoryList, setCategoryList] = useState<{ id: number; name: string; color?: string | null }[]>([])
 
   const loadCategories = useCallback(() => {

@@ -9,6 +9,7 @@ import SettingsHeader from './SettingsHeader'
 const log = createLogger('Settings')
 
 function deviceLabel(d: DeviceFingerprintResponse): string {
+  if (d.deviceName) return d.deviceName
   const ua = d.userAgent || ''
   let browser = '未知浏览器'
   if (/Edg\//.test(ua)) browser = 'Edge'
